@@ -8,7 +8,7 @@ const Index = () => {
           <img 
             src={usableLearningLogo} 
             alt="Usable Learning Logo" 
-            className="mx-auto max-w-md h-auto"
+            className="mx-auto w-full max-w-2xl h-auto"
           />
         </div>
         <h1 className="text-4xl font-bold mb-4">Welcome to Usable Learning</h1>
