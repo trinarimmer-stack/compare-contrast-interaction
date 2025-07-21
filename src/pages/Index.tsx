@@ -1,4 +1,4 @@
-import usableLearningLogo from "@/assets/usable-learning-logo-transparent.png";
+import usableLearningLogo from "@/assets/usable-learning-logo-fixed.png";
 
 const Index = () => {
   return (
