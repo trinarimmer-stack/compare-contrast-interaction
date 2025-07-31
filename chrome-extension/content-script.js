@@ -27,12 +27,12 @@
           }
         }
         
-        const totalElements = document.querySelectorAll('*').length;
-        console.log(`[Rise Extension] Attempt ${attempts}: Elements: ${totalElements}, URL: ${window.location.href}`);
+        console.log(`[Rise Extension] Attempt ${attempts}: Looking for Rise interface...`);
         
         // Wait for substantial page content to load (Rise editor is complex)
-        if (totalElements < 500) {
-          console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
+        const elementCount = document.querySelectorAll('*').length;
+        if (elementCount < 500) {
+          console.log(`[Rise Extension] Page still loading (${elementCount} elements), waiting...`);
           if (attempts < maxAttempts) {
             setTimeout(checkForRise, 1000);
             return;
@@ -85,6 +85,7 @@
         ];
         
         // Log diagnostic info every attempt for now to understand the page structure
+        let totalElements = 0;
         if (attempts === 1 || attempts % 5 === 0) {
           // Get first 20 data-testid attributes
           const dataTestIds = Array.from(document.querySelectorAll('[data-testid]')).slice(0, 20).map(el => el.getAttribute('data-testid'));
@@ -113,10 +114,11 @@
           }).flat().filter(c => c).slice(0, 30);
           
           // Get page structure info
+          totalElements = document.querySelectorAll('*').length;
           console.log(`[Rise Extension] Page analysis:`, {
             url: window.location.href,
             title: document.title,
-            totalElements: document.querySelectorAll('*').length,
+            totalElements: totalElements,
             divCount: document.querySelectorAll('div').length,
             dataTestIds: dataTestIds,
             relevantClasses: [...new Set(relevantClasses)],
@@ -136,9 +138,12 @@
             dataTestId: btn.getAttribute('data-testid')
           }));
           console.log(`[Rise Extension] Found buttons:`, buttons);
+        } else {
+          // Still need to check element count on every attempt
+          totalElements = document.querySelectorAll('*').length;
         }
         
-        // Use the existing totalElements from page analysis above
+        // Check if page has loaded enough content
         if (totalElements < 500) {
           console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
           if (attempts < maxAttempts) {
