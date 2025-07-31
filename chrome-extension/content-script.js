@@ -53,20 +53,12 @@
           '.main-content'
         ];
         
-        // Log diagnostic info every few attempts
-        if (attempts % 3 === 0) {
-          // Get all elements with data attributes
-          const allDataAttrs = Array.from(document.querySelectorAll('*')).filter(el => {
-            return Array.from(el.attributes).some(attr => attr.name.startsWith('data-'));
-          }).slice(0, 10).map(el => {
-            const attrs = {};
-            for (let attr of el.attributes) {
-              if (attr.name.startsWith('data-')) attrs[attr.name] = attr.value;
-            }
-            return { tagName: el.tagName, attrs };
-          });
+        // Log diagnostic info every attempt for now to understand the page structure
+        if (attempts === 1 || attempts % 5 === 0) {
+          // Get first 20 data-testid attributes
+          const dataTestIds = Array.from(document.querySelectorAll('[data-testid]')).slice(0, 20).map(el => el.getAttribute('data-testid'));
           
-          // Get all class names that might be relevant
+          // Get first 30 relevant class names
           const relevantClasses = Array.from(document.querySelectorAll('*')).map(el => {
             const className = el.className;
             if (typeof className === 'string' && className) {
@@ -78,23 +70,38 @@
                 c.includes('content') || c.includes('Content') ||
                 c.includes('block') || c.includes('Block') ||
                 c.includes('sidebar') || c.includes('Sidebar') ||
-                c.includes('authoring') || c.includes('Authoring')
+                c.includes('authoring') || c.includes('Authoring') ||
+                c.includes('menu') || c.includes('Menu') ||
+                c.includes('toolbar') || c.includes('Toolbar')
               );
             }
             return [];
-          }).flat().filter(c => c).slice(0, 20);
+          }).flat().filter(c => c).slice(0, 30);
           
-          console.log(`[Rise Extension] Comprehensive diagnostic:`, {
+          // Get page structure info
+          console.log(`[Rise Extension] Page analysis:`, {
+            url: window.location.href,
+            title: document.title,
             totalElements: document.querySelectorAll('*').length,
             divCount: document.querySelectorAll('div').length,
-            dataTestIds: Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid')),
-            allDataAttrs: allDataAttrs,
+            dataTestIds: dataTestIds,
             relevantClasses: [...new Set(relevantClasses)],
             hasReactRoot: !!document.querySelector('#root, [data-reactroot]'),
             mainElement: !!document.querySelector('main, [role="main"]'),
             bodyId: document.body?.id || 'no-id',
-            htmlClasses: document.documentElement?.className || 'no-classes'
+            htmlClasses: document.documentElement?.className || 'no-classes',
+            bodyFirstChild: document.body?.firstElementChild?.tagName,
+            bodyFirstChildId: document.body?.firstElementChild?.id,
+            bodyFirstChildClasses: document.body?.firstElementChild?.className
           });
+          
+          // Look for any buttons or navigation elements
+          const buttons = Array.from(document.querySelectorAll('button')).slice(0, 10).map(btn => ({
+            text: btn.textContent?.trim().substring(0, 50),
+            classes: btn.className,
+            dataTestId: btn.getAttribute('data-testid')
+          }));
+          console.log(`[Rise Extension] Found buttons:`, buttons);
         }
         
         let riseInterface = null;
