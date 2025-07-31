@@ -355,24 +355,46 @@
           ariaLabel: el.getAttribute('aria-label'),
           dataTestId: el.getAttribute('data-testid'),
           parent: el.parentElement?.tagName,
-          parentClass: el.parentElement?.className
+          parentClass: el.parentElement?.className?.substring(0, 100)
         })));
         
-        // Look for a container that looks like the actual Block Library panel
-        const blockLibraryPanel = blockLibraryElements.find(el => {
+        // Look for the actual Block Library sidebar/panel
+        const potentialPanels = blockLibraryElements.filter(el => {
+          // Skip the HTML root element
+          if (el.tagName === 'HTML') return false;
+          
+          // Look for elements that are likely sidebar containers
+          const isPanel = el.tagName === 'DIV' || el.tagName === 'ASIDE' || el.tagName === 'SECTION';
           const hasBlockLibraryText = el.textContent?.includes('Block Library');
-          const isContainer = el.children && el.children.length > 1;
-          const hasReasonableSize = el.offsetHeight > 100 && el.offsetWidth > 100;
-          return hasBlockLibraryText && isContainer && hasReasonableSize;
+          const hasChildren = el.children && el.children.length > 0;
+          const hasReasonableSize = el.offsetHeight > 50 && el.offsetWidth > 200;
+          const notTooLarge = el.offsetHeight < window.innerHeight && el.offsetWidth < window.innerWidth;
+          
+          return isPanel && hasBlockLibraryText && hasChildren && hasReasonableSize && notTooLarge;
         });
         
+        console.log('[Rise Extension] Potential Block Library panels:', potentialPanels.map(panel => ({
+          tag: panel.tagName,
+          className: panel.className,
+          id: panel.id,
+          size: `${panel.offsetWidth}x${panel.offsetHeight}`,
+          childCount: panel.children.length,
+          firstChild: panel.children[0]?.tagName,
+          textPreview: panel.textContent?.substring(0, 100)
+        })));
+        
+        const blockLibraryPanel = potentialPanels[0]; // Take the first viable candidate
+        
         if (blockLibraryPanel) {
-          console.log('[Rise Extension] Found likely Block Library panel:', {
+          console.log('[Rise Extension] Selected Block Library panel:', {
             element: blockLibraryPanel,
             className: blockLibraryPanel.className,
-            children: Array.from(blockLibraryPanel.children).map(child => ({
+            id: blockLibraryPanel.id,
+            size: `${blockLibraryPanel.offsetWidth}x${blockLibraryPanel.offsetHeight}`,
+            children: Array.from(blockLibraryPanel.children).slice(0, 5).map(child => ({
               tag: child.tagName,
               className: child.className,
+              id: child.id,
               textContent: child.textContent?.substring(0, 50)
             }))
           });
