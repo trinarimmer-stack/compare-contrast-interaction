@@ -131,12 +131,20 @@
       // Check if already initialized
       if (element.dataset.initialized) return;
       
-      // Get configuration from storage or element attributes
-      chrome.storage.local.get(['compareContrastConfig'], (result) => {
-        const config = result.compareContrastConfig || {};
+      // Get configuration from storage (if available) or use defaults
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        // Extension context - use chrome storage
+        chrome.storage.local.get(['compareContrastConfig'], (result) => {
+          const config = result.compareContrastConfig || {};
+          createInteraction(element, config);
+          element.dataset.initialized = 'true';
+        });
+      } else {
+        // Page context - use default config or attempt to get from window
+        const config = window.compareContrastConfig || {};
         createInteraction(element, config);
         element.dataset.initialized = 'true';
-      });
+      }
     });
   }
 
