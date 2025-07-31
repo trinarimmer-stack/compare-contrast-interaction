@@ -239,10 +239,22 @@
     const ideal = document.getElementById('interaction-ideal').value;
     const placeholder = document.getElementById('interaction-placeholder').value;
 
-    // Store configuration for the interaction
-    chrome.storage.local.set({
-      compareContrastConfig: { title, prompt, ideal, placeholder }
-    });
+    // Store configuration for the interaction with error handling
+    try {
+      if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({
+          compareContrastConfig: { title, prompt, ideal, placeholder }
+        }, () => {
+          if (chrome.runtime.lastError) {
+            console.log('[Rise Extension] Storage error:', chrome.runtime.lastError);
+          }
+        });
+      } else {
+        console.log('[Rise Extension] Chrome storage API not available');
+      }
+    } catch (error) {
+      console.log('[Rise Extension] Storage access error:', error);
+    }
 
     closeConfigModal();
   };
