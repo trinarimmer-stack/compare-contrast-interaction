@@ -14,8 +14,10 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.articulate.com/*",
-        "*://*.rise.com/*"
+        "*://*.articulate.com/authoring/*",
+        "*://*.articulate.com/author/*",
+        "*://*.rise.com/authoring/*",
+        "*://*.rise.com/author/*"
       ],
       "js": ["content-script.js"],
       "css": ["styles.css"],
