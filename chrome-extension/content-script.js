@@ -24,24 +24,36 @@
         const selectors = [
           // Course editor specific
           '[data-testid="lesson-editor"]',
-          '[data-testid="course-editor"]',
+          '[data-testid="course-editor"]', 
+          '[data-testid="authoring-workspace"]',
+          '[data-testid="content-editor"]',
+          '[data-testid="lesson-content"]',
+          '[data-testid="editor-content"]',
           '[class*="lesson-editor"]',
           '[class*="course-editor"]',
           '[class*="editor-container"]',
           '[class*="authoring"]',
+          '[class*="workspace"]',
           // Block/content areas
           '[data-testid="block-menu"]',
+          '[data-testid="content-blocks"]',
+          '[data-testid="block-palette"]',
+          '[data-testid="lesson-blocks"]',
           '.block-menu',
           '[class*="block-menu"]',
           '[class*="block-list"]',
+          '[class*="block-palette"]',
           '[class*="content-area"]',
           '[data-testid="content-area"]',
           '.content-area',
           // Sidebars and panels
           '[data-testid="sidebar"]',
+          '[data-testid="left-sidebar"]',
+          '[data-testid="right-sidebar"]',
           '[class*="sidebar"]',
           '.lesson-sidebar',
           '[class*="panel"]',
+          '[class*="toolbar"]',
           // Generic Rise elements
           '[class*="rise"]',
           '[data-cy="block-menu"]',
@@ -57,6 +69,9 @@
         if (attempts === 1 || attempts % 5 === 0) {
           // Get first 20 data-testid attributes
           const dataTestIds = Array.from(document.querySelectorAll('[data-testid]')).slice(0, 20).map(el => el.getAttribute('data-testid'));
+          console.log(`[Rise Extension] Found data-testids:`, dataTestIds);
+          
+          // Test each data-testid as a potential target
           
           // Get first 30 relevant class names
           const relevantClasses = Array.from(document.querySelectorAll('*')).map(el => {
