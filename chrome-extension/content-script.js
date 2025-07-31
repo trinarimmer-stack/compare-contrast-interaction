@@ -8,31 +8,68 @@
   function waitForRise() {
     return new Promise((resolve) => {
       let attempts = 0;
-      const maxAttempts = 30; // 30 seconds total
+      const maxAttempts = 50; // 25 seconds total
       
       const checkForRise = () => {
         attempts++;
         console.log(`[Rise Extension] Attempt ${attempts}: Looking for Rise interface...`);
+        console.log(`[Rise Extension] Current URL: ${window.location.href}`);
+        console.log(`[Rise Extension] Document ready state: ${document.readyState}`);
         
-        // Look for various Rise interface elements
+        // Log what we can find in the page
+        const bodyClasses = document.body ? document.body.className : 'no body';
+        console.log(`[Rise Extension] Body classes: ${bodyClasses}`);
+        
+        // Look for various Rise interface elements with more specific course editor selectors
         const selectors = [
+          // Course editor specific
+          '[data-testid="lesson-editor"]',
+          '[data-testid="course-editor"]',
+          '[class*="lesson-editor"]',
+          '[class*="course-editor"]',
+          '[class*="editor-container"]',
+          '[class*="authoring"]',
+          // Block/content areas
           '[data-testid="block-menu"]',
           '.block-menu',
-          '[class*="block"]',
+          '[class*="block-menu"]',
+          '[class*="block-list"]',
+          '[class*="content-area"]',
           '[data-testid="content-area"]',
           '.content-area',
-          '[class*="content"]',
-          '[class*="editor"]',
-          '.lesson-editor',
+          // Sidebars and panels
+          '[data-testid="sidebar"]',
+          '[class*="sidebar"]',
+          '.lesson-sidebar',
+          '[class*="panel"]',
+          // Generic Rise elements
+          '[class*="rise"]',
+          '[data-cy="block-menu"]',
+          // React and main elements
           '#root',
-          '[data-reactroot]'
+          '[data-reactroot]',
+          'main',
+          '[role="main"]',
+          '.main-content'
         ];
+        
+        // Log some diagnostic info every few attempts
+        if (attempts % 3 === 0) {
+          console.log(`[Rise Extension] Diagnostic info:`, {
+            totalElements: document.querySelectorAll('*').length,
+            divCount: document.querySelectorAll('div').length,
+            dataTestIds: Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid')),
+            classesWithEditor: Array.from(document.querySelectorAll('[class*="editor"], [class*="Editor"]')).map(el => el.className.split(' ').filter(c => c.includes('editor') || c.includes('Editor'))),
+            classesWithBlock: Array.from(document.querySelectorAll('[class*="block"], [class*="Block"]')).map(el => el.className.split(' ').filter(c => c.includes('block') || c.includes('Block')))
+          });
+        }
         
         let riseInterface = null;
         for (const selector of selectors) {
           riseInterface = document.querySelector(selector);
           if (riseInterface) {
             console.log(`[Rise Extension] Found Rise interface using selector: ${selector}`);
+            console.log(`[Rise Extension] Element classes: ${riseInterface.className}`);
             break;
           }
         }
@@ -45,7 +82,7 @@
             resolve(document.body);
           }
         } else {
-          setTimeout(checkForRise, 1000);
+          setTimeout(checkForRise, 500);
         }
       };
       checkForRise();
