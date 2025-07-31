@@ -8,7 +8,7 @@
   function waitForRise() {
     return new Promise((resolve) => {
       let attempts = 0;
-      const maxAttempts = 50; // 25 seconds total
+      const maxAttempts = 100; // 50 seconds total
       
       const checkForRise = () => {
         attempts++;
@@ -104,6 +104,17 @@
           console.log(`[Rise Extension] Found buttons:`, buttons);
         }
         
+        // First check if we have enough elements (React app has loaded)
+        const totalElements = document.querySelectorAll('*').length;
+        if (totalElements < 100) {
+          console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
+          if (attempts < maxAttempts) {
+            const delay = attempts < 20 ? 1000 : 500;
+            setTimeout(checkForRise, delay);
+            return;
+          }
+        }
+
         let riseInterface = null;
         for (const selector of selectors) {
           riseInterface = document.querySelector(selector);
@@ -122,7 +133,9 @@
             resolve(document.body);
           }
         } else {
-          setTimeout(checkForRise, 500);
+          // Wait longer for React app to load
+          const delay = attempts < 20 ? 1000 : 500; // 1 second for first 20 attempts, then 500ms
+          setTimeout(checkForRise, delay);
         }
       };
       checkForRise();
