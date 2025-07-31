@@ -55,8 +55,10 @@
         
         // Log diagnostic info every few attempts
         if (attempts % 3 === 0) {
-          // Get all elements with meaningful attributes
-          const allDataAttrs = Array.from(document.querySelectorAll('[data-*]')).slice(0, 10).map(el => {
+          // Get all elements with data attributes
+          const allDataAttrs = Array.from(document.querySelectorAll('*')).filter(el => {
+            return Array.from(el.attributes).some(attr => attr.name.startsWith('data-'));
+          }).slice(0, 10).map(el => {
             const attrs = {};
             for (let attr of el.attributes) {
               if (attr.name.startsWith('data-')) attrs[attr.name] = attr.value;
