@@ -486,26 +486,46 @@
       console.log('[Rise Extension] Creating floating action button...');
       const floatingBtn = document.createElement('div');
       floatingBtn.id = 'rise-compare-contrast-fab';
-      floatingBtn.innerHTML = `
-        <button style="
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          background: #0066cc;
-          color: white;
-          border: none;
-          font-size: 24px;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          z-index: 10000;
-          transition: all 0.3s ease;
-        " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="insertCompareContrastBlock()" title="Add Compare & Contrast Block">
-          📝
-        </button>
+      
+      const button = document.createElement('button');
+      button.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #0066cc;
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        transition: all 0.3s ease;
       `;
+      button.textContent = '📝';
+      button.title = 'Add Compare & Contrast Block';
+      
+      // Add event listeners instead of inline onclick
+      button.addEventListener('click', function() {
+        console.log('[Rise Extension] Floating button clicked');
+        if (typeof window.insertCompareContrastBlock === 'function') {
+          window.insertCompareContrastBlock();
+        } else {
+          console.error('[Rise Extension] insertCompareContrastBlock function not found');
+        }
+      });
+      
+      button.addEventListener('mouseover', function() {
+        this.style.transform = 'scale(1.1)';
+      });
+      
+      button.addEventListener('mouseout', function() {
+        this.style.transform = 'scale(1)';
+      });
+      
+      floatingBtn.appendChild(button);
       document.body.appendChild(floatingBtn);
     };
     
