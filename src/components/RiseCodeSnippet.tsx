@@ -21,22 +21,23 @@ export const RiseCodeSnippet = ({
   const { toast } = useToast();
 
   const generateCodeSnippet = () => {
-    return `<div id="compare-contrast-widget-${Date.now()}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+    const widgetId = `compare-contrast-widget-${Date.now()}`;
+    return `<div id="${widgetId}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
   <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 24px;">
     <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">${title}</h2>
     <p style="margin: 0 0 24px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">${prompt}</p>
     
-    <div id="input-section">
+    <div id="${widgetId}-input-section">
       <textarea 
-        id="user-response" 
+        id="${widgetId}-user-response" 
         placeholder="${placeholder}"
         style="width: 100%; min-height: 120px; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; line-height: 1.5; resize: vertical; font-family: inherit; box-sizing: border-box;"
         rows="6"
       ></textarea>
       <div style="margin-top: 16px; text-align: right;">
         <button 
-          id="compare-btn"
-          onclick="compareResponses()"
+          id="${widgetId}-compare-btn"
+          onclick="compareResponses${widgetId}()"
           style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 14px; transition: background-color 0.2s;"
           onmouseover="this.style.backgroundColor='#2563eb'"
           onmouseout="this.style.backgroundColor='#3b82f6'"
@@ -46,7 +47,7 @@ export const RiseCodeSnippet = ({
       </div>
     </div>
     
-    <div id="comparison-section" style="display: none;">
+    <div id="${widgetId}-comparison-section" style="display: none;">
       <div style="display: flex; align-items: center; gap: 8px; color: #16a34a; margin-bottom: 24px;">
         <span style="font-size: 14px; font-weight: 500;">✓ Responses compared</span>
       </div>
@@ -56,7 +57,7 @@ export const RiseCodeSnippet = ({
           <div style="margin-bottom: 12px;">
             <span style="background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 8px; font-size: 12px; border-radius: 4px; font-weight: 500;">Your Response</span>
           </div>
-          <p id="user-response-display" style="margin: 0; font-size: 14px; line-height: 1.5; color: #1f2937;"></p>
+          <p id="${widgetId}-user-response-display" style="margin: 0; font-size: 14px; line-height: 1.5; color: #1f2937;"></p>
         </div>
         
         <div style="border: 1px solid #bbf7d0; background: #dcfce7; border-radius: 8px; padding: 16px;">
@@ -69,7 +70,7 @@ export const RiseCodeSnippet = ({
       
       <div style="text-align: center;">
         <button 
-          onclick="resetInteraction()"
+          onclick="resetInteraction${widgetId}()"
           style="background: white; color: #374151; border: 1px solid #d1d5db; padding: 10px 20px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 14px; transition: background-color 0.2s;"
           onmouseover="this.style.backgroundColor='#f9fafb'"
           onmouseout="this.style.backgroundColor='white'"
@@ -82,9 +83,8 @@ export const RiseCodeSnippet = ({
 </div>
 
 <script>
-function compareResponses() {
-  const userResponse = document.getElementById('user-response').value.trim();
-  const compareBtn = document.getElementById('compare-btn');
+function compareResponses${widgetId}() {
+  const userResponse = document.getElementById('${widgetId}-user-response').value.trim();
   
   if (!userResponse) {
     alert('Please enter your response before comparing.');
@@ -92,29 +92,29 @@ function compareResponses() {
   }
   
   // Hide input section
-  document.getElementById('input-section').style.display = 'none';
+  document.getElementById('${widgetId}-input-section').style.display = 'none';
   
   // Show comparison section
-  document.getElementById('comparison-section').style.display = 'block';
+  document.getElementById('${widgetId}-comparison-section').style.display = 'block';
   
   // Update user response display
-  document.getElementById('user-response-display').textContent = userResponse;
+  document.getElementById('${widgetId}-user-response-display').textContent = userResponse;
 }
 
-function resetInteraction() {
+function resetInteraction${widgetId}() {
   // Clear input
-  document.getElementById('user-response').value = '';
+  document.getElementById('${widgetId}-user-response').value = '';
   
   // Show input section
-  document.getElementById('input-section').style.display = 'block';
+  document.getElementById('${widgetId}-input-section').style.display = 'block';
   
   // Hide comparison section
-  document.getElementById('comparison-section').style.display = 'none';
+  document.getElementById('${widgetId}-comparison-section').style.display = 'none';
 }
 
 // Enable/disable compare button based on input
-document.getElementById('user-response').addEventListener('input', function() {
-  const compareBtn = document.getElementById('compare-btn');
+document.getElementById('${widgetId}-user-response').addEventListener('input', function() {
+  const compareBtn = document.getElementById('${widgetId}-compare-btn');
   const hasText = this.value.trim().length > 0;
   
   compareBtn.disabled = !hasText;
@@ -122,10 +122,12 @@ document.getElementById('user-response').addEventListener('input', function() {
   compareBtn.style.cursor = hasText ? 'pointer' : 'not-allowed';
 });
 
-// Initial button state
-document.getElementById('compare-btn').disabled = true;
-document.getElementById('compare-btn').style.backgroundColor = '#9ca3af';
-document.getElementById('compare-btn').style.cursor = 'not-allowed';
+// Initial button state - only run when elements exist
+if (document.getElementById('${widgetId}-compare-btn')) {
+  document.getElementById('${widgetId}-compare-btn').disabled = true;
+  document.getElementById('${widgetId}-compare-btn').style.backgroundColor = '#9ca3af';
+  document.getElementById('${widgetId}-compare-btn').style.cursor = 'not-allowed';
+}
 </script>`;
   };
 
