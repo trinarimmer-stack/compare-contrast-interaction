@@ -121,7 +121,7 @@
         
         // First check if we have enough elements (React app has loaded)
         const totalElements = document.querySelectorAll('*').length;
-        if (totalElements < 100) {
+        if (totalElements < 50) {
           console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
           if (attempts < maxAttempts) {
             const delay = attempts < 20 ? 1000 : 500;
