@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CompareContrastInteraction } from "./CompareContrastInteraction";
+import { RiseCodeSnippet } from "./RiseCodeSnippet";
 import { Download, Eye, Edit3 } from "lucide-react";
 
 export const InteractionEditor = () => {
@@ -208,6 +209,13 @@ export const InteractionEditor = () => {
           </div>
         </CardContent>
       </Card>
+
+      <RiseCodeSnippet
+        title={title}
+        prompt={prompt}
+        idealResponse={idealResponse}
+        placeholder={placeholder}
+      />
 
       {showPreview && (
         <div>
