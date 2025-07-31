@@ -427,17 +427,46 @@
       for (const selector of selectors) {
         const menu = document.querySelector(selector);
         if (menu) {
+          console.log(`[Rise Extension] Found potential menu with selector: ${selector}`);
+          console.log('[Rise Extension] Menu element details:', {
+            tagName: menu.tagName,
+            className: menu.className,
+            id: menu.id,
+            childCount: menu.children.length,
+            textContent: menu.textContent?.substring(0, 100),
+            size: `${menu.offsetWidth}x${menu.offsetHeight}`
+          });
+          
           // Check if button already exists
           if (menu.querySelector('.compare-contrast-block-btn')) {
             console.log('[Rise Extension] Button already exists in menu');
             return true;
           }
-          console.log(`[Rise Extension] Found block menu with selector: ${selector}`);
-          const customButton = createCompareContrastButton();
-          menu.appendChild(customButton);
-          return true;
+          
+          // Log what we're about to do
+          console.log('[Rise Extension] Attempting to create and append button...');
+          
+          try {
+            const customButton = createCompareContrastButton();
+            console.log('[Rise Extension] Button created successfully:', customButton);
+            
+            menu.appendChild(customButton);
+            console.log('[Rise Extension] Button appended successfully to menu');
+            
+            // Verify it was actually added
+            const verifyButton = menu.querySelector('.compare-contrast-block-btn');
+            if (verifyButton) {
+              console.log('[Rise Extension] Button verified in DOM');
+              return true;
+            } else {
+              console.log('[Rise Extension] Button not found after append - continuing search...');
+            }
+          } catch (error) {
+            console.log('[Rise Extension] Error creating/appending button:', error);
+          }
         }
       }
+      console.log('[Rise Extension] No suitable block menu found');
       return false;
     };
     
