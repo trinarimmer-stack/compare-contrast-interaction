@@ -353,8 +353,30 @@
           id: el.id,
           textContent: el.textContent?.substring(0, 100),
           ariaLabel: el.getAttribute('aria-label'),
-          dataTestId: el.getAttribute('data-testid')
+          dataTestId: el.getAttribute('data-testid'),
+          parent: el.parentElement?.tagName,
+          parentClass: el.parentElement?.className
         })));
+        
+        // Look for a container that looks like the actual Block Library panel
+        const blockLibraryPanel = blockLibraryElements.find(el => {
+          const hasBlockLibraryText = el.textContent?.includes('Block Library');
+          const isContainer = el.children && el.children.length > 1;
+          const hasReasonableSize = el.offsetHeight > 100 && el.offsetWidth > 100;
+          return hasBlockLibraryText && isContainer && hasReasonableSize;
+        });
+        
+        if (blockLibraryPanel) {
+          console.log('[Rise Extension] Found likely Block Library panel:', {
+            element: blockLibraryPanel,
+            className: blockLibraryPanel.className,
+            children: Array.from(blockLibraryPanel.children).map(child => ({
+              tag: child.tagName,
+              className: child.className,
+              textContent: child.textContent?.substring(0, 50)
+            }))
+          });
+        }
       }
       
       const selectors = [
