@@ -53,20 +53,45 @@
           '.main-content'
         ];
         
-        // Log some diagnostic info every few attempts
+        // Log diagnostic info every few attempts
         if (attempts % 3 === 0) {
-          console.log(`[Rise Extension] Diagnostic info:`, {
+          // Get all elements with meaningful attributes
+          const allDataAttrs = Array.from(document.querySelectorAll('[data-*]')).slice(0, 10).map(el => {
+            const attrs = {};
+            for (let attr of el.attributes) {
+              if (attr.name.startsWith('data-')) attrs[attr.name] = attr.value;
+            }
+            return { tagName: el.tagName, attrs };
+          });
+          
+          // Get all class names that might be relevant
+          const relevantClasses = Array.from(document.querySelectorAll('*')).map(el => {
+            const className = el.className;
+            if (typeof className === 'string' && className) {
+              return className.split(' ').filter(c => 
+                c.includes('rise') || c.includes('Rise') || 
+                c.includes('lesson') || c.includes('Lesson') ||
+                c.includes('editor') || c.includes('Editor') ||
+                c.includes('course') || c.includes('Course') ||
+                c.includes('content') || c.includes('Content') ||
+                c.includes('block') || c.includes('Block') ||
+                c.includes('sidebar') || c.includes('Sidebar') ||
+                c.includes('authoring') || c.includes('Authoring')
+              );
+            }
+            return [];
+          }).flat().filter(c => c).slice(0, 20);
+          
+          console.log(`[Rise Extension] Comprehensive diagnostic:`, {
             totalElements: document.querySelectorAll('*').length,
             divCount: document.querySelectorAll('div').length,
             dataTestIds: Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid')),
-            classesWithEditor: Array.from(document.querySelectorAll('[class*="editor"], [class*="Editor"]')).map(el => {
-              const className = el.className;
-              return typeof className === 'string' ? className.split(' ').filter(c => c.includes('editor') || c.includes('Editor')) : [];
-            }).flat(),
-            classesWithBlock: Array.from(document.querySelectorAll('[class*="block"], [class*="Block"]')).map(el => {
-              const className = el.className;
-              return typeof className === 'string' ? className.split(' ').filter(c => c.includes('block') || c.includes('Block')) : [];
-            }).flat()
+            allDataAttrs: allDataAttrs,
+            relevantClasses: [...new Set(relevantClasses)],
+            hasReactRoot: !!document.querySelector('#root, [data-reactroot]'),
+            mainElement: !!document.querySelector('main, [role="main"]'),
+            bodyId: document.body?.id || 'no-id',
+            htmlClasses: document.documentElement?.className || 'no-classes'
           });
         }
         
