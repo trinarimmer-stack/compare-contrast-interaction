@@ -335,9 +335,38 @@
     // Try multiple approaches to add the custom block
     console.log('[Rise Extension] Starting block insertion attempts...');
     
-    // Method 1: Try to find and add to existing block menu
+    // Method 1: Try to find and add to Block Library
     const tryAddToBlockMenu = () => {
+      // First, let's search for any elements containing "Block Library" text
+      const allElements = document.querySelectorAll('*');
+      const blockLibraryElements = Array.from(allElements).filter(el => {
+        const text = el.textContent || '';
+        const ariaLabel = el.getAttribute('aria-label') || '';
+        const title = el.getAttribute('title') || '';
+        return text.includes('Block Library') || ariaLabel.includes('Block Library') || title.includes('Block Library');
+      });
+      
+      if (blockLibraryElements.length > 0) {
+        console.log('[Rise Extension] Found elements containing "Block Library":', blockLibraryElements.map(el => ({
+          tag: el.tagName,
+          className: el.className,
+          id: el.id,
+          textContent: el.textContent?.substring(0, 100),
+          ariaLabel: el.getAttribute('aria-label'),
+          dataTestId: el.getAttribute('data-testid')
+        })));
+      }
+      
       const selectors = [
+        // Block Library specific selectors
+        '[data-testid*="block-library"]',
+        '[data-testid*="Block-Library"]',
+        '[aria-label*="Block Library"]',
+        '[title*="Block Library"]',
+        '.block-library',
+        '[class*="block-library"]',
+        '[class*="Block-Library"]',
+        // Legacy selectors
         '[data-testid="block-menu"]',
         '.block-menu', 
         '[class*="block-palette"]',
@@ -348,6 +377,8 @@
         '[class*="lesson"]',
         '[class*="editor"]'
       ];
+      
+      console.log('[Rise Extension] Searching for Block Library with selectors...');
       
       for (const selector of selectors) {
         const menu = document.querySelector(selector);
