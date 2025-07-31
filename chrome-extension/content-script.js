@@ -7,14 +7,43 @@
   // Wait for Rise interface to load
   function waitForRise() {
     return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds total
+      
       const checkForRise = () => {
-        // Look for Rise's block menu or authoring interface
-        const riseInterface = document.querySelector('[data-testid="block-menu"]') || 
-                             document.querySelector('.block-menu') ||
-                             document.querySelector('[class*="block"]');
+        attempts++;
+        console.log(`[Rise Extension] Attempt ${attempts}: Looking for Rise interface...`);
         
-        if (riseInterface) {
-          resolve(riseInterface);
+        // Look for various Rise interface elements
+        const selectors = [
+          '[data-testid="block-menu"]',
+          '.block-menu',
+          '[class*="block"]',
+          '[data-testid="content-area"]',
+          '.content-area',
+          '[class*="content"]',
+          '[class*="editor"]',
+          '.lesson-editor',
+          '#root',
+          '[data-reactroot]'
+        ];
+        
+        let riseInterface = null;
+        for (const selector of selectors) {
+          riseInterface = document.querySelector(selector);
+          if (riseInterface) {
+            console.log(`[Rise Extension] Found Rise interface using selector: ${selector}`);
+            break;
+          }
+        }
+        
+        if (riseInterface || attempts >= maxAttempts) {
+          if (riseInterface) {
+            resolve(riseInterface);
+          } else {
+            console.log('[Rise Extension] Max attempts reached, resolving with body');
+            resolve(document.body);
+          }
         } else {
           setTimeout(checkForRise, 1000);
         }
@@ -39,8 +68,8 @@
     return button;
   }
 
-  // Insert the interaction into the course
-  function insertCompareContrastBlock() {
+  // Make insertCompareContrastBlock globally available
+  window.insertCompareContrastBlock = function() {
     const interactionHtml = `
       <div class="compare-contrast-interaction" data-interaction-type="compare-contrast">
         <div class="interaction-container">
@@ -160,17 +189,75 @@
     style.href = chrome.runtime.getURL('styles.css');
     document.head.appendChild(style);
 
-    // Try to add the custom block to Rise's interface
-    // This will need to be adapted based on Rise's actual DOM structure
-    setTimeout(() => {
-      const blockMenu = document.querySelector('[data-testid="block-menu"]') || 
-                       document.querySelector('.block-menu');
+    // Try multiple approaches to add the custom block
+    console.log('[Rise Extension] Starting block insertion attempts...');
+    
+    // Method 1: Try to find and add to existing block menu
+    const tryAddToBlockMenu = () => {
+      const selectors = [
+        '[data-testid="block-menu"]',
+        '.block-menu', 
+        '[class*="block-palette"]',
+        '[class*="block-list"]',
+        '[class*="sidebar"]',
+        '.lesson-sidebar',
+        '[data-testid="sidebar"]'
+      ];
       
-      if (blockMenu) {
-        const customButton = createCompareContrastButton();
-        blockMenu.appendChild(customButton);
+      for (const selector of selectors) {
+        const menu = document.querySelector(selector);
+        if (menu) {
+          console.log(`[Rise Extension] Found block menu with selector: ${selector}`);
+          const customButton = createCompareContrastButton();
+          menu.appendChild(customButton);
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    // Method 2: Create floating action button if block menu not found
+    const createFloatingButton = () => {
+      console.log('[Rise Extension] Creating floating action button...');
+      const floatingBtn = document.createElement('div');
+      floatingBtn.id = 'rise-compare-contrast-fab';
+      floatingBtn.innerHTML = `
+        <button style="
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: #0066cc;
+          color: white;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 10000;
+          transition: all 0.3s ease;
+        " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="insertCompareContrastBlock()" title="Add Compare & Contrast Block">
+          📝
+        </button>
+      `;
+      document.body.appendChild(floatingBtn);
+    };
+    
+    // Try both methods with delays
+    setTimeout(() => {
+      if (!tryAddToBlockMenu()) {
+        console.log('[Rise Extension] Block menu not found, trying floating button...');
+        createFloatingButton();
       }
     }, 2000);
+    
+    // Try again after longer delay
+    setTimeout(() => {
+      if (!document.getElementById('rise-compare-contrast-fab') && !document.querySelector('.compare-contrast-block-btn')) {
+        tryAddToBlockMenu() || createFloatingButton();
+      }
+    }, 5000);
   });
 
 })();
