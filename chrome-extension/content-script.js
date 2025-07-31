@@ -179,15 +179,18 @@
     closeConfigModal();
   };
 
-  // Initialize when Rise loads
-  waitForRise().then(() => {
-    console.log('Rise interface detected, initializing Compare & Contrast extension...');
+  // Initialize the extension
+  function initializeExtension() {
+    console.log('[Rise Extension] Initializing on:', window.location.href);
     
-    // Add custom CSS
-    const style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.href = chrome.runtime.getURL('styles.css');
-    document.head.appendChild(style);
+    // Add custom CSS if not already added
+    if (!document.getElementById('compare-contrast-styles')) {
+      const style = document.createElement('link');
+      style.id = 'compare-contrast-styles';
+      style.rel = 'stylesheet';
+      style.href = chrome.runtime.getURL('styles.css');
+      document.head.appendChild(style);
+    }
 
     // Try multiple approaches to add the custom block
     console.log('[Rise Extension] Starting block insertion attempts...');
@@ -201,12 +204,19 @@
         '[class*="block-list"]',
         '[class*="sidebar"]',
         '.lesson-sidebar',
-        '[data-testid="sidebar"]'
+        '[data-testid="sidebar"]',
+        '[class*="lesson"]',
+        '[class*="editor"]'
       ];
       
       for (const selector of selectors) {
         const menu = document.querySelector(selector);
         if (menu) {
+          // Check if button already exists
+          if (menu.querySelector('.compare-contrast-block-btn')) {
+            console.log('[Rise Extension] Button already exists in menu');
+            return true;
+          }
           console.log(`[Rise Extension] Found block menu with selector: ${selector}`);
           const customButton = createCompareContrastButton();
           menu.appendChild(customButton);
@@ -218,6 +228,12 @@
     
     // Method 2: Create floating action button if block menu not found
     const createFloatingButton = () => {
+      // Check if floating button already exists
+      if (document.getElementById('rise-compare-contrast-fab')) {
+        console.log('[Rise Extension] Floating button already exists');
+        return;
+      }
+      
       console.log('[Rise Extension] Creating floating action button...');
       const floatingBtn = document.createElement('div');
       floatingBtn.id = 'rise-compare-contrast-fab';
@@ -252,12 +268,50 @@
       }
     }, 2000);
     
-    // Try again after longer delay
+    // Try again after longer delay for course editor
     setTimeout(() => {
       if (!document.getElementById('rise-compare-contrast-fab') && !document.querySelector('.compare-contrast-block-btn')) {
         tryAddToBlockMenu() || createFloatingButton();
       }
     }, 5000);
+  }
+
+  // Watch for navigation changes (SPA routing)
+  function watchForNavigation() {
+    let currentUrl = window.location.href;
+    
+    // Watch for URL changes
+    const observer = new MutationObserver(() => {
+      if (window.location.href !== currentUrl) {
+        currentUrl = window.location.href;
+        console.log('[Rise Extension] Navigation detected to:', currentUrl);
+        
+        // Re-initialize when navigating to course editor
+        if (currentUrl.includes('/lessons/') || currentUrl.includes('/course/')) {
+          setTimeout(() => {
+            waitForRise().then(initializeExtension);
+          }, 1000);
+        }
+      }
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Also listen for pushstate/popstate events
+    window.addEventListener('popstate', () => {
+      setTimeout(() => {
+        waitForRise().then(initializeExtension);
+      }, 1000);
+    });
+  }
+
+  // Initial load
+  waitForRise().then(() => {
+    initializeExtension();
+    watchForNavigation();
   });
 
 })();
