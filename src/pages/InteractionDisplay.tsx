@@ -10,13 +10,23 @@ const InteractionDisplay = () => {
   const placeholder = searchParams.get('placeholder') || 'Type your response here...';
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <CompareContrastInteraction
-        title={title}
-        prompt={prompt}
-        idealResponse={idealResponse}
-        placeholder={placeholder}
-      />
+    <div className="min-h-screen bg-background p-2">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            📝 Interactive Learning Activity
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Complete the prompt below, then compare your response with the ideal answer
+          </p>
+        </div>
+        <CompareContrastInteraction
+          title={title}
+          prompt={prompt}
+          idealResponse={idealResponse}
+          placeholder={placeholder}
+        />
+      </div>
     </div>
   );
 };
