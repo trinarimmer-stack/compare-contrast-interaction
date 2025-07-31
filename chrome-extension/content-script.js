@@ -59,8 +59,14 @@
             totalElements: document.querySelectorAll('*').length,
             divCount: document.querySelectorAll('div').length,
             dataTestIds: Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid')),
-            classesWithEditor: Array.from(document.querySelectorAll('[class*="editor"], [class*="Editor"]')).map(el => el.className.split(' ').filter(c => c.includes('editor') || c.includes('Editor'))),
-            classesWithBlock: Array.from(document.querySelectorAll('[class*="block"], [class*="Block"]')).map(el => el.className.split(' ').filter(c => c.includes('block') || c.includes('Block')))
+            classesWithEditor: Array.from(document.querySelectorAll('[class*="editor"], [class*="Editor"]')).map(el => {
+              const className = el.className;
+              return typeof className === 'string' ? className.split(' ').filter(c => c.includes('editor') || c.includes('Editor')) : [];
+            }).flat(),
+            classesWithBlock: Array.from(document.querySelectorAll('[class*="block"], [class*="Block"]')).map(el => {
+              const className = el.className;
+              return typeof className === 'string' ? className.split(' ').filter(c => c.includes('block') || c.includes('Block')) : [];
+            }).flat()
           });
         }
         
