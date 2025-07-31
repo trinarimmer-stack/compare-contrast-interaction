@@ -8,17 +8,36 @@
   function waitForRise() {
     return new Promise((resolve) => {
       let attempts = 0;
-      const maxAttempts = 100; // 50 seconds total
+      const maxAttempts = 200; // Increase attempts for slower loading
       
       const checkForRise = () => {
         attempts++;
-        console.log(`[Rise Extension] Attempt ${attempts}: Looking for Rise interface...`);
-        console.log(`[Rise Extension] Current URL: ${window.location.href}`);
-        console.log(`[Rise Extension] Document ready state: ${document.readyState}`);
         
-        // Log what we can find in the page
-        const bodyClasses = document.body ? document.body.className : 'no body';
-        console.log(`[Rise Extension] Body classes: ${bodyClasses}`);
+        // First check if we're on the right URL (authoring interface)
+        const isAuthoringUrl = window.location.href.includes('/authoring/') || 
+                              window.location.href.includes('/author/') ||
+                              window.location.href.includes('/lessons/') ||
+                              window.location.href.includes('/course/');
+        
+        if (!isAuthoringUrl) {
+          console.log(`[Rise Extension] Not on authoring page, URL: ${window.location.href}`);
+          if (attempts < maxAttempts) {
+            setTimeout(checkForRise, 2000); // Wait longer for navigation
+            return;
+          }
+        }
+        
+        const totalElements = document.querySelectorAll('*').length;
+        console.log(`[Rise Extension] Attempt ${attempts}: Elements: ${totalElements}, URL: ${window.location.href}`);
+        
+        // Wait for substantial page content to load (Rise editor is complex)
+        if (totalElements < 500) {
+          console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
+          if (attempts < maxAttempts) {
+            setTimeout(checkForRise, 1000);
+            return;
+          }
+        }
         
         // Look for various Rise interface elements with more specific course editor selectors
         const selectors = [
