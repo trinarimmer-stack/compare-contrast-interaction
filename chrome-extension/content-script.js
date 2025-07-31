@@ -503,6 +503,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 10000;
         transition: all 0.3s ease;
+        display: none;
       `;
       button.textContent = '📝';
       button.title = 'Add Compare & Contrast Block';
@@ -528,25 +529,54 @@
       floatingBtn.appendChild(button);
       document.body.appendChild(floatingBtn);
     };
-    
-    // Try both methods with delays
-    setTimeout(() => {
-      if (!tryAddToBlockMenu()) {
-        console.log('[Rise Extension] Block menu not found, trying floating button...');
-        createFloatingButton();
+
+    const showFloatingButton = () => {
+      const button = document.querySelector('#rise-compare-contrast-fab button');
+      if (button) {
+        button.style.display = 'block';
+        console.log('[Rise Extension] Floating button shown');
       }
+    };
+
+    const hideFloatingButton = () => {
+      const button = document.querySelector('#rise-compare-contrast-fab button');
+      if (button) {
+        button.style.display = 'none';
+        console.log('[Rise Extension] Floating button hidden');
+      }
+    };
+
+    const isBlockLibraryVisible = () => {
+      // Check if Block Library panel is open/visible
+      const blockLibraryElements = Array.from(document.querySelectorAll('*')).filter(el => {
+        const text = el.textContent || '';
+        const isVisible = el.offsetWidth > 0 && el.offsetHeight > 0;
+        const hasBlockLibraryText = text.includes('Block Library');
+        return isVisible && hasBlockLibraryText && el.tagName !== 'HTML';
+      });
+      
+      return blockLibraryElements.length > 0;
+    };
+    
+    // Create floating button (hidden by default) - will be shown when Block Library opens
+    createFloatingButton();
+    
+    // Try to add to Block Library with delays
+    setTimeout(() => {
+      tryAddToBlockMenu();
     }, 2000);
     
     // Try again after longer delay for course editor
     setTimeout(() => {
-      if (!document.getElementById('rise-compare-contrast-fab') && !document.querySelector('.compare-contrast-block-btn')) {
-        tryAddToBlockMenu() || createFloatingButton();
+      if (!document.querySelector('.compare-contrast-block-btn')) {
+        tryAddToBlockMenu();
       }
     }, 5000);
     
-    // Watch for Block Library panel opening
+    // Watch for Block Library panel opening/closing
     const blockLibraryObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
+        // Check for added nodes (Block Library opening)
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             // Check if this newly added node contains Block Library
@@ -563,9 +593,31 @@
               console.log('[Rise Extension] Block Library panel detected, attempting to add button...');
               setTimeout(() => {
                 if (!document.querySelector('.compare-contrast-block-btn')) {
-                  tryAddToBlockMenu();
+                  if (!tryAddToBlockMenu()) {
+                    // Show floating button if we can't add to block library
+                    showFloatingButton();
+                  }
+                } else {
+                  // Hide floating button if we successfully added to block library
+                  hideFloatingButton();
                 }
               }, 500);
+            }
+          }
+        });
+        
+        // Check for removed nodes (Block Library closing)
+        mutation.removedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const hadBlockLibrary = node.textContent?.includes('Block Library');
+            if (hadBlockLibrary) {
+              console.log('[Rise Extension] Block Library panel removed');
+              setTimeout(() => {
+                // Check if Block Library is still visible
+                if (!isBlockLibraryVisible()) {
+                  hideFloatingButton();
+                }
+              }, 100);
             }
           }
         });
