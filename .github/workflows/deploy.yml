@@ -27,7 +27,7 @@ jobs:
         run: npm ci
         
       - name: Build
-        run: npm run build
+        run: npm run build -- --base=/brand-new-artwork/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
