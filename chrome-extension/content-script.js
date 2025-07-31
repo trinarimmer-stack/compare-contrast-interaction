@@ -402,24 +402,29 @@
       }
       
       const selectors = [
-        // Block Library specific selectors
+        // Block Library specific selectors (these should come first)
+        '[class*="block-library"]',
+        '[class*="Block-Library"]', 
+        '[class*="block-menu"]',
+        '[class*="block-palette"]',
+        '[class*="block-list"]',
+        '[class*="block-panel"]',
+        '[class*="block-sidebar"]',
         '[data-testid*="block-library"]',
         '[data-testid*="Block-Library"]',
+        '[data-testid*="block-menu"]',
+        '[data-testid*="block-palette"]',
         '[aria-label*="Block Library"]',
         '[title*="Block Library"]',
         '.block-library',
-        '[class*="block-library"]',
-        '[class*="Block-Library"]',
-        // Legacy selectors
-        '[data-testid="block-menu"]',
         '.block-menu', 
-        '[class*="block-palette"]',
-        '[class*="block-list"]',
-        '[class*="sidebar"]',
-        '.lesson-sidebar',
-        '[data-testid="sidebar"]',
-        '[class*="lesson"]',
-        '[class*="editor"]'
+        '.block-palette',
+        // More specific panel selectors (avoid general sidebars)
+        '[class*="insert-panel"]',
+        '[class*="content-panel"]',
+        '[class*="modal-content"][class*="block"]',
+        '[class*="dialog"][class*="block"]'
+        // Removed general sidebar selectors that were matching the wrong element
       ];
       
       console.log('[Rise Extension] Searching for Block Library with selectors...');
@@ -518,6 +523,40 @@
         tryAddToBlockMenu() || createFloatingButton();
       }
     }, 5000);
+    
+    // Watch for Block Library panel opening
+    const blockLibraryObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if this newly added node contains Block Library
+            const hasBlockLibrary = node.textContent?.includes('Block Library') || 
+                                  node.querySelector && (
+                                    node.querySelector('[class*="block-library"]') ||
+                                    node.querySelector('[class*="block-menu"]') ||
+                                    node.querySelector('[class*="block-palette"]') ||
+                                    Array.from(node.querySelectorAll('*')).some(el => 
+                                      el.textContent?.includes('Block Library'))
+                                  );
+                                  
+            if (hasBlockLibrary) {
+              console.log('[Rise Extension] Block Library panel detected, attempting to add button...');
+              setTimeout(() => {
+                if (!document.querySelector('.compare-contrast-block-btn')) {
+                  tryAddToBlockMenu();
+                }
+              }, 500);
+            }
+          }
+        });
+      });
+    });
+    
+    // Start observing for Block Library panel
+    blockLibraryObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
   }
 
   // Watch for navigation changes (SPA routing)
