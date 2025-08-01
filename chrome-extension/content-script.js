@@ -198,6 +198,8 @@
 
   // Make insertCompareContrastBlock globally available
   window.insertCompareContrastBlock = function() {
+    console.log('[Rise Extension] insertCompareContrastBlock called');
+    
     const interactionHtml = `
       <div class="compare-contrast-interaction" data-interaction-type="compare-contrast">
         <div class="interaction-container">
@@ -223,13 +225,23 @@
                       document.querySelector('.content-area') ||
                       document.body;
 
+    console.log('[Rise Extension] Active area found:', activeArea);
+
     // Create a container and insert the interaction
     const container = document.createElement('div');
     container.innerHTML = interactionHtml;
-    activeArea.appendChild(container.firstElementChild);
-
-    // Inject the actual interactive functionality for preview
-    injectInteractiveScript();
+    console.log('[Rise Extension] Container created with HTML');
+    
+    try {
+      activeArea.appendChild(container.firstElementChild);
+      console.log('[Rise Extension] Interactive component added to page');
+      
+      // Inject the actual interactive functionality for preview
+      injectInteractiveScript();
+      console.log('[Rise Extension] Interactive script injected');
+    } catch (error) {
+      console.error('[Rise Extension] Error inserting component:', error);
+    }
   }
 
   // Inject the full interactive component for course preview/publish
@@ -511,10 +523,15 @@
       // Add event listeners instead of inline onclick
       button.addEventListener('click', function() {
         console.log('[Rise Extension] Floating button clicked');
+        console.log('[Rise Extension] Function type:', typeof window.insertCompareContrastBlock);
+        console.log('[Rise Extension] Function exists:', !!window.insertCompareContrastBlock);
         if (typeof window.insertCompareContrastBlock === 'function') {
+          console.log('[Rise Extension] Calling insertCompareContrastBlock');
           window.insertCompareContrastBlock();
         } else {
           console.error('[Rise Extension] insertCompareContrastBlock function not found');
+          // Try to re-initialize the function
+          initializeExtension();
         }
       });
       
