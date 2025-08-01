@@ -563,8 +563,11 @@
     
     // Try to add to Block Library with delays
     setTimeout(() => {
-      if (!tryAddToBlockMenu()) {
+      const success = tryAddToBlockMenu();
+      console.log('[Rise Extension] First attempt result:', success);
+      if (!success) {
         // If we can't add to block menu, show floating button
+        console.log('[Rise Extension] Showing floating button after first attempt failed');
         showFloatingButton();
       }
     }, 2000);
@@ -572,8 +575,11 @@
     // Try again after longer delay for course editor
     setTimeout(() => {
       if (!document.querySelector('.compare-contrast-block-btn')) {
-        if (!tryAddToBlockMenu()) {
+        const success = tryAddToBlockMenu();
+        console.log('[Rise Extension] Second attempt result:', success);
+        if (!success) {
           // If we still can't add to block menu, show floating button
+          console.log('[Rise Extension] Showing floating button after second attempt failed');
           showFloatingButton();
         }
       }
