@@ -563,13 +563,19 @@
     
     // Try to add to Block Library with delays
     setTimeout(() => {
-      tryAddToBlockMenu();
+      if (!tryAddToBlockMenu()) {
+        // If we can't add to block menu, show floating button
+        showFloatingButton();
+      }
     }, 2000);
     
     // Try again after longer delay for course editor
     setTimeout(() => {
       if (!document.querySelector('.compare-contrast-block-btn')) {
-        tryAddToBlockMenu();
+        if (!tryAddToBlockMenu()) {
+          // If we still can't add to block menu, show floating button
+          showFloatingButton();
+        }
       }
     }, 5000);
     
