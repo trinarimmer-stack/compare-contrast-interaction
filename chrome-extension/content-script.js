@@ -220,9 +220,14 @@
       </div>
     `;
 
-    // Find the current cursor position or active block area
-    const activeArea = document.querySelector('[data-testid="content-area"]') || 
+    // Find the current cursor position or active block area - try multiple Rise 360 selectors
+    const activeArea = document.querySelector('.blocks-authoring .blocks-content') ||
+                      document.querySelector('.lesson-content') ||
+                      document.querySelector('.blocks-content') ||
+                      document.querySelector('[data-testid="lesson-content"]') ||
+                      document.querySelector('[data-testid="content-area"]') || 
                       document.querySelector('.content-area') ||
+                      document.querySelector('.blocks-authoring') ||
                       document.body;
 
     console.log('[Rise Extension] Active area found:', activeArea);
