@@ -31,12 +31,25 @@
         
         // Wait for substantial page content to load (Rise editor is complex)
         const elementCount = document.querySelectorAll('*').length;
-        if (elementCount < 500) {
+        // Reduced threshold - Rise 360 may not need 500+ elements to be functional
+        if (elementCount < 150) {
           console.log(`[Rise Extension] Page still loading (${elementCount} elements), waiting...`);
           if (attempts < maxAttempts) {
             setTimeout(checkForRise, 1000);
             return;
           }
+        }
+        
+        // Also check if Rise-specific elements are present - if so, proceed regardless of element count
+        const hasRiseElements = document.querySelector('[class*="authoring"]') || 
+                               document.querySelector('[data-testid*="course"]') ||
+                               document.querySelector('[data-testid*="lesson"]') ||
+                               document.querySelector('.blocks-authoring');
+        
+        if (!hasRiseElements && elementCount < 300 && attempts < maxAttempts) {
+          console.log(`[Rise Extension] No Rise elements detected yet (${elementCount} elements), waiting...`);
+          setTimeout(checkForRise, 1000);
+          return;
         }
         
         // Look for various Rise interface elements with more specific course editor selectors
