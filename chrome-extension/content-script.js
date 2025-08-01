@@ -205,7 +205,10 @@
       </div>
     `;
     
-    button.addEventListener('click', insertCompareContrastBlock);
+    button.addEventListener('click', () => {
+      console.log('[Rise Extension] Compare & Contrast button clicked - opening config modal');
+      window.openConfigModal();
+    });
     return button;
   }
 
@@ -323,13 +326,15 @@
   };
 
   window.saveConfiguration = function() {
-    // Save configuration and update the interaction
+    // Get configuration values from the form
     const title = document.getElementById('interaction-title').value;
     const prompt = document.getElementById('interaction-prompt').value;
     const ideal = document.getElementById('interaction-ideal').value;
     const placeholder = document.getElementById('interaction-placeholder').value;
 
-    // Store configuration for the interaction with error handling
+    console.log('[Rise Extension] Saving configuration:', { title, prompt, ideal, placeholder });
+
+    // Store configuration for future use
     try {
       if (chrome && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({
@@ -339,15 +344,78 @@
             console.log('[Rise Extension] Storage error:', chrome.runtime.lastError);
           }
         });
-      } else {
-        console.log('[Rise Extension] Chrome storage API not available');
       }
     } catch (error) {
       console.log('[Rise Extension] Storage access error:', error);
     }
 
+    // Close modal and insert the configured interaction
     closeConfigModal();
+    
+    // Insert the interaction with custom values
+    insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder);
   };
+  
+  // Updated function to insert interaction with custom configuration
+  function insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder) {
+    console.log('[Rise Extension] Inserting configured interaction:', { title, prompt, ideal, placeholder });
+    
+    const interactionHtml = `
+      <div class="compare-contrast-interaction" data-interaction-type="compare-contrast">
+        <div class="interaction-container">
+          <div class="interaction-preview">
+            <div class="preview-header">
+              <h3>${title}</h3>
+              <p>This is a preview. The interaction will be fully functional when published.</p>
+            </div>
+            <div class="preview-content">
+              <p><strong>Prompt:</strong> ${prompt}</p>
+              <textarea placeholder="${placeholder}" disabled></textarea>
+              <button disabled>Compare Responses</button>
+            </div>
+          </div>
+          <div class="interaction-config">
+            <button class="config-btn" onclick="window.openConfigModal()">Edit Configuration</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Store the configuration in the HTML for the interaction script
+    const configData = JSON.stringify({ title, prompt, ideal, placeholder });
+    const fullHtml = interactionHtml.replace(
+      'data-interaction-type="compare-contrast"',
+      `data-interaction-type="compare-contrast" data-config='${configData}'`
+    );
+
+    // Find the current cursor position or active block area - try multiple Rise 360 selectors
+    const activeArea = document.querySelector('.blocks-authoring .blocks-content') ||
+                      document.querySelector('.lesson-content') ||
+                      document.querySelector('.blocks-content') ||
+                      document.querySelector('[data-testid="lesson-content"]') ||
+                      document.querySelector('[data-testid="content-area"]') || 
+                      document.querySelector('.content-area') ||
+                      document.querySelector('.blocks-authoring') ||
+                      document.body;
+
+    console.log('[Rise Extension] Active area found:', activeArea);
+
+    // Create a container and insert the interaction
+    const container = document.createElement('div');
+    container.innerHTML = fullHtml;
+    console.log('[Rise Extension] Container created with configured HTML');
+    
+    try {
+      activeArea.appendChild(container.firstElementChild);
+      console.log('[Rise Extension] Configured interactive component added to page');
+      
+      // Inject the actual interactive functionality for preview
+      injectInteractiveScript();
+      console.log('[Rise Extension] Interactive script injected');
+    } catch (error) {
+      console.error('[Rise Extension] Error inserting configured component:', error);
+    }
+  }
 
   // Initialize the extension
   function initializeExtension() {
