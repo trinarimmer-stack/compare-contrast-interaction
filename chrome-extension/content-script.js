@@ -657,49 +657,128 @@
       }
     }, 5000);
     
-    // Watch for Block Library panel opening/closing
+    // Enhanced Block Library panel observer with comprehensive logging
     const blockLibraryObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         // Check for added nodes (Block Library opening)
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check if this newly added node contains Block Library
-            const hasBlockLibrary = node.textContent?.includes('Block Library') || 
-                                  node.querySelector && (
-                                    node.querySelector('[class*="block-library"]') ||
-                                    node.querySelector('[class*="block-menu"]') ||
-                                    node.querySelector('[class*="block-palette"]') ||
-                                    Array.from(node.querySelectorAll('*')).some(el => 
-                                      el.textContent?.includes('Block Library'))
-                                  );
-                                  
-            if (hasBlockLibrary) {
-              console.log('[Rise Extension] Block Library panel detected, attempting to add button...');
+            console.log('[Rise Extension] DOM node added:', {
+              tagName: node.tagName,
+              className: node.className,
+              id: node.id,
+              textPreview: node.textContent?.substring(0, 100),
+              childCount: node.children?.length || 0
+            });
+            
+            // Comprehensive Block Library detection with detailed logging
+            const detectionCriteria = {
+              // Text-based detection
+              hasBlockLibraryText: node.textContent?.includes('Block Library'),
+              hasBlockText: node.textContent?.includes('Block'),
+              hasLibraryText: node.textContent?.includes('Library'),
+              
+              // Class-based detection (very broad)
+              hasBlockClass: node.className?.includes('block'),
+              hasLibraryClass: node.className?.includes('library'),
+              hasSidebarClass: node.className?.includes('sidebar'),
+              hasPanelClass: node.className?.includes('panel'),
+              hasMenuClass: node.className?.includes('menu'),
+              hasPaletteClass: node.className?.includes('palette'),
+              
+              // Attribute detection
+              hasBlockAttr: node.getAttribute && (
+                node.getAttribute('data-testid')?.includes('block') ||
+                node.getAttribute('aria-label')?.includes('block') ||
+                node.getAttribute('title')?.includes('block')
+              ),
+              
+              // Child element detection
+              hasBlockChildren: node.querySelector && (
+                node.querySelector('[class*="block"]') ||
+                node.querySelector('[data-testid*="block"]') ||
+                node.querySelector('[aria-label*="block"]')
+              ),
+              
+              // Rise-specific patterns
+              hasRisePattern: node.className?.match(/(blocks?[-_]|sidebar|panel|menu|palette)/i),
+              
+              // Size and structure hints
+              isLikelyPanel: node.offsetWidth > 100 && node.offsetHeight > 100,
+              hasChildren: (node.children?.length || 0) > 0
+            };
+            
+            console.log('[Rise Extension] Detection criteria for node:', detectionCriteria);
+            
+            // Multiple detection strategies
+            const isBlockLibraryCandidate = 
+              detectionCriteria.hasBlockLibraryText ||
+              (detectionCriteria.hasBlockText && detectionCriteria.hasLibraryText) ||
+              (detectionCriteria.hasBlockClass && detectionCriteria.hasSidebarClass) ||
+              (detectionCriteria.hasBlockClass && detectionCriteria.hasPanelClass) ||
+              (detectionCriteria.hasBlockAttr && detectionCriteria.hasChildren) ||
+              (detectionCriteria.hasRisePattern && detectionCriteria.hasChildren) ||
+              detectionCriteria.hasBlockChildren;
+            
+            if (isBlockLibraryCandidate) {
+              console.log('[Rise Extension] POTENTIAL Block Library panel detected!');
+              console.log('[Rise Extension] Node details:', {
+                element: node,
+                fullClassName: node.className,
+                id: node.id,
+                attributes: Array.from(node.attributes || []).map(attr => `${attr.name}="${attr.value}"`),
+                size: `${node.offsetWidth}x${node.offsetHeight}`,
+                children: Array.from(node.children || []).slice(0, 3).map(child => ({
+                  tag: child.tagName,
+                  className: child.className,
+                  id: child.id
+                }))
+              });
+              
+              // Try multiple insertion strategies with delays
               setTimeout(() => {
+                console.log('[Rise Extension] Attempting button insertion after 500ms delay...');
                 if (!document.querySelector('.compare-contrast-block-btn')) {
-                  if (!tryAddToBlockMenu()) {
-                    // Show floating button if we can't add to block library
+                  const success = tryAddToBlockMenu();
+                  console.log('[Rise Extension] Button insertion result:', success);
+                  if (!success) {
+                    console.log('[Rise Extension] Falling back to floating button');
                     showFloatingButton();
                   }
                 } else {
-                  // Hide floating button if we successfully added to block library
+                  console.log('[Rise Extension] Button already exists, hiding floating button');
                   hideFloatingButton();
                 }
               }, 500);
+              
+              // Also try immediately in case the delay isn't needed
+              setTimeout(() => {
+                console.log('[Rise Extension] Attempting immediate button insertion...');
+                if (!document.querySelector('.compare-contrast-block-btn')) {
+                  tryAddToBlockMenu();
+                }
+              }, 50);
             }
           }
         });
         
-        // Check for removed nodes (Block Library closing)
+        // Enhanced removed nodes detection
         mutation.removedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            const hadBlockLibrary = node.textContent?.includes('Block Library');
-            if (hadBlockLibrary) {
-              console.log('[Rise Extension] Block Library panel removed');
+            const hadBlockContent = node.textContent?.includes('Block') || 
+                                  node.className?.includes('block') ||
+                                  node.className?.includes('sidebar') ||
+                                  node.className?.includes('panel');
+            if (hadBlockContent) {
+              console.log('[Rise Extension] Potential Block Library panel removed:', {
+                tagName: node.tagName,
+                className: node.className,
+                id: node.id
+              });
               setTimeout(() => {
-                // Check if Block Library is still visible
                 if (!isBlockLibraryVisible()) {
-                  hideFloatingButton();
+                  console.log('[Rise Extension] Block Library no longer visible, managing UI...');
+                  // Don't hide floating button immediately - user might reopen panel
                 }
               }, 100);
             }
@@ -708,10 +787,13 @@
       });
     });
     
-    // Start observing for Block Library panel
+    // Observe with comprehensive settings
     blockLibraryObserver.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'data-testid'],
+      characterData: false
     });
   }
 
