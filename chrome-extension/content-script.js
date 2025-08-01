@@ -375,20 +375,57 @@
           parentClass: el.parentElement?.className?.substring(0, 100)
         })));
         
-        // Look for the actual Block Library sidebar/panel
+        // Look for the actual Block Library sidebar/panel with more flexible criteria
         const potentialPanels = blockLibraryElements.filter(el => {
           // Skip the HTML root element
           if (el.tagName === 'HTML') return false;
           
-          // Look for elements that are likely sidebar containers
-          const isPanel = el.tagName === 'DIV' || el.tagName === 'ASIDE' || el.tagName === 'SECTION';
+          // Look for elements that are likely sidebar containers - be more flexible
+          const isPanel = el.tagName === 'DIV' || el.tagName === 'ASIDE' || el.tagName === 'SECTION' || el.tagName === 'UL' || el.tagName === 'NAV';
           const hasBlockLibraryText = el.textContent?.includes('Block Library');
           const hasChildren = el.children && el.children.length > 0;
-          const hasReasonableSize = el.offsetHeight > 50 && el.offsetWidth > 200;
+          // Reduce size requirements - Rise panels might be smaller
+          const hasMinSize = el.offsetHeight > 20 && el.offsetWidth > 100;
           const notTooLarge = el.offsetHeight < window.innerHeight && el.offsetWidth < window.innerWidth;
           
-          return isPanel && hasBlockLibraryText && hasChildren && hasReasonableSize && notTooLarge;
+          const criteria = {
+            isPanel,
+            hasBlockLibraryText, 
+            hasChildren,
+            hasMinSize,
+            notTooLarge,
+            className: el.className,
+            offsetWidth: el.offsetWidth,
+            offsetHeight: el.offsetHeight
+          };
+          
+          console.log(`[Rise Extension] Evaluating element:`, criteria);
+          
+          return isPanel && hasBlockLibraryText && hasChildren && hasMinSize && notTooLarge;
         });
+        
+        // Also look for Rise-specific block library selectors
+        const riseSelectors = [
+          '.blocks-sidebar',
+          '.block-shortcut',
+          '.block-palette', 
+          '.sidebar-content',
+          '[class*="blocks-sidebar"]',
+          '[class*="block-shortcut"]',
+          '[class*="palette"]'
+        ];
+        
+        for (const selector of riseSelectors) {
+          const riseElement = document.querySelector(selector);
+          if (riseElement && !potentialPanels.includes(riseElement)) {
+            console.log(`[Rise Extension] Found Rise-specific element with ${selector}:`, {
+              className: riseElement.className,
+              size: `${riseElement.offsetWidth}x${riseElement.offsetHeight}`,
+              children: riseElement.children.length
+            });
+            potentialPanels.push(riseElement);
+          }
+        }
         
         console.log('[Rise Extension] Potential Block Library panels:', potentialPanels.map(panel => ({
           tag: panel.tagName,
