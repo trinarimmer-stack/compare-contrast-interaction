@@ -360,6 +360,14 @@
   function insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder) {
     console.log('[Rise Extension] Inserting configured interaction:', { title, prompt, ideal, placeholder });
     
+    // Check if we're already in the process of adding an interaction to prevent duplicates
+    if (window.insertingInteraction) {
+      console.log('[Rise Extension] Already inserting interaction, skipping duplicate');
+      return;
+    }
+    
+    window.insertingInteraction = true;
+    
     const interactionHtml = `
       <div class="compare-contrast-interaction" data-interaction-type="compare-contrast">
         <div class="interaction-container">
@@ -415,6 +423,11 @@
     } catch (error) {
       console.error('[Rise Extension] Error inserting configured component:', error);
     }
+    
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      window.insertingInteraction = false;
+    }, 1000);
   }
 
   // Initialize the extension
@@ -564,6 +577,49 @@
       
       console.log('[Rise Extension] Searching for Block Library with selectors...');
       
+      // Look specifically for the open block wizard first
+      const blockWizard = document.querySelector('.block-wizard--open');
+      if (blockWizard && !blockWizard.querySelector('.compare-contrast-block-btn')) {
+        console.log('[Rise Extension] Found open block wizard:', blockWizard);
+        
+        // Try to find the blocks container within the wizard
+        const blocksContainer = blockWizard.querySelector('.block-wizard__content') ||
+                               blockWizard.querySelector('.blocks-grid') ||
+                               blockWizard.querySelector('.block-groups') ||
+                               blockWizard.querySelector('.blocks-content') ||
+                               blockWizard.querySelector('[class*="block-items"]') ||
+                               blockWizard.querySelector('[class*="blocks"]');
+        
+        if (blocksContainer) {
+          console.log('[Rise Extension] Found blocks container in wizard:', blocksContainer);
+          try {
+            const customButton = createCompareContrastButton();
+            // Insert at the beginning of the blocks container
+            if (blocksContainer.firstChild) {
+              blocksContainer.insertBefore(customButton, blocksContainer.firstChild);
+            } else {
+              blocksContainer.appendChild(customButton);
+            }
+            console.log('[Rise Extension] Compare & Contrast button added to Block Library');
+            return true;
+          } catch (error) {
+            console.log('[Rise Extension] Error adding button to blocks container:', error);
+          }
+        } else {
+          // If no specific container found, add to the wizard itself
+          console.log('[Rise Extension] No blocks container found, adding to wizard directly');
+          try {
+            const customButton = createCompareContrastButton();
+            blockWizard.insertBefore(customButton, blockWizard.firstChild);
+            console.log('[Rise Extension] Compare & Contrast button added to Block Wizard');
+            return true;
+          } catch (error) {
+            console.log('[Rise Extension] Error adding button to wizard:', error);
+          }
+        }
+      }
+      
+      // Fallback to other selectors
       for (const selector of selectors) {
         const menu = document.querySelector(selector);
         if (menu) {
@@ -645,17 +701,8 @@
       
       // Add event listeners instead of inline onclick
       button.addEventListener('click', function() {
-        console.log('[Rise Extension] Floating button clicked');
-        console.log('[Rise Extension] Function type:', typeof window.insertCompareContrastBlock);
-        console.log('[Rise Extension] Function exists:', !!window.insertCompareContrastBlock);
-        if (typeof window.insertCompareContrastBlock === 'function') {
-          console.log('[Rise Extension] Calling insertCompareContrastBlock');
-          window.insertCompareContrastBlock();
-        } else {
-          console.error('[Rise Extension] insertCompareContrastBlock function not found');
-          // Try to re-initialize the function
-          initializeExtension();
-        }
+        console.log('[Rise Extension] Floating button clicked - opening config modal');
+        window.openConfigModal();
       });
       
       button.addEventListener('mouseover', function() {
