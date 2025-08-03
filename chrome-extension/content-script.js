@@ -417,10 +417,49 @@
       `data-interaction-type="compare-contrast" data-config='${configData}'`
     );
 
-    // Find the correct content insertion point in Rise 360
+    // Find the correct content insertion point in Rise 360 with detailed analysis
+    console.log('[Rise Extension] Analyzing DOM structure to find lesson content...');
+    
+    // First, let's analyze the blocks-authoring structure
+    const blocksAuthoring = document.querySelector('.blocks-authoring');
+    if (blocksAuthoring) {
+      console.log('[Rise Extension] Blocks authoring structure:', {
+        className: blocksAuthoring.className,
+        childCount: blocksAuthoring.children.length,
+        children: Array.from(blocksAuthoring.children).map((child, index) => ({
+          index,
+          tagName: child.tagName,
+          className: child.className,
+          id: child.id,
+          childCount: child.children.length,
+          textPreview: child.textContent?.substring(0, 100)
+        }))
+      });
+      
+      // Look for lesson blocks within the authoring area
+      const lessonBlocks = blocksAuthoring.querySelector('.lesson-blocks') ||
+                          blocksAuthoring.querySelector('[class*="lesson-blocks"]') ||
+                          blocksAuthoring.querySelector('[class*="blocks-container"]') ||
+                          blocksAuthoring.querySelector('[class*="content-blocks"]');
+      
+      if (lessonBlocks) {
+        console.log('[Rise Extension] Found lesson blocks container:', {
+          className: lessonBlocks.className,
+          childCount: lessonBlocks.children.length,
+          parent: lessonBlocks.parentElement.className
+        });
+      }
+    }
+
     const possibleTargets = [
-      // Try lesson content areas first
+      // Try very specific lesson content areas first
+      '.blocks-authoring .lesson-blocks',
       '.lesson-blocks',
+      '.blocks-authoring [class*="lesson-blocks"]',
+      '.blocks-authoring [class*="blocks-container"]',
+      '.blocks-authoring [class*="content-blocks"]',
+      '.blocks-authoring .blocks',
+      // Try other content areas
       '.lesson-content .blocks',
       '.lesson-content',
       '.blocks-content',
@@ -428,10 +467,9 @@
       '[data-testid="lesson-content"]',
       '[data-testid="content-area"]',
       '.content-area',
-      // Then try blocks authoring areas
-      '.blocks-authoring .lesson-blocks',
-      '.blocks-authoring .blocks-content', 
-      '.blocks-authoring .content-area',
+      // Then try the second child of blocks-authoring (often the content area)
+      '.blocks-authoring > div:nth-child(2)',
+      '.blocks-authoring > div:last-child',
       // Finally fallback to main authoring area
       '.blocks-authoring'
     ];
@@ -445,9 +483,17 @@
           className: activeArea.className,
           childCount: activeArea.children.length,
           firstChild: activeArea.children[0]?.tagName,
-          size: `${activeArea.offsetWidth}x${activeArea.offsetHeight}`
+          firstChildClass: activeArea.children[0]?.className,
+          size: `${activeArea.offsetWidth}x${activeArea.offsetHeight}`,
+          hasExistingBlocks: activeArea.querySelector('[class*="block"]') ? 'Yes' : 'No',
+          existingBlockTypes: Array.from(activeArea.querySelectorAll('[class*="block"]')).slice(0, 3).map(block => block.className)
         });
-        break;
+        
+        // If this area has existing blocks, it's likely the right place
+        if (activeArea.querySelector('[class*="block"]') || selector.includes('lesson-blocks') || selector.includes('content-blocks')) {
+          console.log('[Rise Extension] This looks like the correct content area!');
+          break;
+        }
       }
     }
     
