@@ -704,13 +704,22 @@
       const prevSibling = container.previousElementSibling;
       if (prevSibling) {
         parent.insertBefore(container, prevSibling);
+        console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
+      } else {
+        console.log(`[Rise Extension] Cannot move interaction ${interactionId} up - already at top`);
       }
     } else if (direction === 'down') {
       const nextSibling = container.nextElementSibling;
       if (nextSibling) {
         parent.insertBefore(nextSibling, container);
+        console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
+      } else {
+        console.log(`[Rise Extension] Cannot move interaction ${interactionId} down - already at bottom`);
       }
     }
+    
+    // Re-attach event listeners after DOM manipulation
+    addInteractionControls();
   }
 
   // Function to delete interaction

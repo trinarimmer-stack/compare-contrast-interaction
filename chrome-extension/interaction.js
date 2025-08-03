@@ -52,9 +52,8 @@
                 >${state.userResponse}</textarea>
                 <div class="button-container">
                   <button 
-                    class="compare-btn ${!state.userResponse.trim() ? 'disabled' : ''}"
+                    class="compare-btn"
                     id="compare-button"
-                    ${!state.userResponse.trim() ? 'disabled' : ''}
                   >
                     Compare Responses
                   </button>
@@ -128,8 +127,11 @@
       // Update button state based on content
       const compareBtn = container.querySelector('#compare-button');
       if (compareBtn) {
-        compareBtn.disabled = !state.userResponse.trim();
-        compareBtn.style.opacity = state.userResponse.trim() ? '1' : '0.5';
+        const hasText = state.userResponse.trim();
+        compareBtn.disabled = !hasText;
+        compareBtn.style.opacity = hasText ? '1' : '0.5';
+        compareBtn.style.cursor = hasText ? 'pointer' : 'not-allowed';
+        compareBtn.style.backgroundColor = hasText ? '#0066cc' : '#cccccc';
       }
     }
 
