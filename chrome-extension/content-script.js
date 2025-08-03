@@ -768,15 +768,24 @@
       return;
     }
     
-    // Find the Rise block that contains this interaction
-    let riseBlock = container.closest('.sparkle-fountain, .block');
+    // Find the actual Rise block that contains this interaction (not our container)
+    // Look for the parent that has sparkle-fountain class (actual Rise blocks)
+    let riseBlock = container.parentElement;
+    while (riseBlock && !riseBlock.classList.contains('sparkle-fountain')) {
+      riseBlock = riseBlock.parentElement;
+      if (riseBlock === document.body) {
+        riseBlock = null;
+        break;
+      }
+    }
     
     if (!riseBlock) {
-      console.log(`[Rise Extension] Could not find containing Rise block`);
+      console.log(`[Rise Extension] Could not find containing sparkle-fountain Rise block`);
+      console.log(`[Rise Extension] Container parent chain:`, container.parentElement?.className, container.parentElement?.parentElement?.className);
       return;
     }
     
-    console.log(`[Rise Extension] Found containing Rise block:`, riseBlock.className);
+    console.log(`[Rise Extension] Found containing sparkle-fountain block:`, riseBlock.className);
     
     // Find the content area that contains all the blocks
     const contentArea = findActiveContentArea();
@@ -785,19 +794,17 @@
       return;
     }
     
-    // Get all Rise blocks in the content area
+    // Get all sparkle-fountain blocks in the content area (these are the actual Rise blocks)
     const allBlocks = Array.from(contentArea.children).filter(child => 
-      child.classList.contains('sparkle-fountain') || 
-      child.classList.contains('block') ||
-      child.querySelector('.sparkle-fountain') ||
-      child.querySelector('.block')
+      child.classList.contains('sparkle-fountain')
     );
     
     const currentIndex = allBlocks.indexOf(riseBlock);
-    console.log(`[Rise Extension] Current block index: ${currentIndex}, Total blocks: ${allBlocks.length}`);
+    console.log(`[Rise Extension] Current sparkle-fountain block index: ${currentIndex}, Total sparkle-fountain blocks: ${allBlocks.length}`);
+    console.log(`[Rise Extension] All sparkle-fountain blocks:`, allBlocks.map(block => block.className));
     
     if (currentIndex === -1) {
-      console.log(`[Rise Extension] Could not find current block in content area`);
+      console.log(`[Rise Extension] Could not find current sparkle-fountain block in content area`);
       return;
     }
     
@@ -805,7 +812,7 @@
       // Move the entire Rise block before the previous block
       const targetBlock = allBlocks[currentIndex - 1];
       contentArea.insertBefore(riseBlock, targetBlock);
-      console.log(`[Rise Extension] Moved interaction block up`);
+      console.log(`[Rise Extension] Moved sparkle-fountain block up`);
     } else if (direction === 'down' && currentIndex < allBlocks.length - 1) {
       // Move the entire Rise block after the next block
       const targetBlock = allBlocks[currentIndex + 1];
@@ -814,7 +821,7 @@
       } else {
         contentArea.appendChild(riseBlock);
       }
-      console.log(`[Rise Extension] Moved interaction block down`);
+      console.log(`[Rise Extension] Moved sparkle-fountain block down`);
     } else {
       console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'}`);
     }
