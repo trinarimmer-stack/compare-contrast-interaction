@@ -761,10 +761,18 @@
 
   // Function to move interaction up or down
   function moveInteraction(interactionId, direction) {
+    // Prevent rapid clicking
+    if (window.movementInProgress) {
+      console.log(`[Rise Extension] Movement already in progress, ignoring click`);
+      return;
+    }
+    window.movementInProgress = true;
+    
     const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
     
     if (!container) {
       console.log(`[Rise Extension] Could not find interaction container for ${interactionId}`);
+      window.movementInProgress = false;
       return;
     }
     
@@ -783,6 +791,7 @@
     if (!riseBlock || !riseBlock.classList.contains('sparkle-fountain')) {
       console.log(`[Rise Extension] Could not find containing sparkle-fountain Rise block`);
       console.log(`[Rise Extension] Container parent chain:`, container.parentElement?.className, container.parentElement?.parentElement?.className, container.parentElement?.parentElement?.parentElement?.className);
+      window.movementInProgress = false;
       return;
     }
     
@@ -792,6 +801,7 @@
     const contentArea = findActiveContentArea();
     if (!contentArea) {
       console.log(`[Rise Extension] Could not find content area`);
+      window.movementInProgress = false;
       return;
     }
     
@@ -802,10 +812,10 @@
     
     const currentIndex = allBlocks.indexOf(riseBlock);
     console.log(`[Rise Extension] Current sparkle-fountain block index: ${currentIndex}, Total sparkle-fountain blocks: ${allBlocks.length}`);
-    console.log(`[Rise Extension] All sparkle-fountain blocks:`, allBlocks.map(block => block.className));
     
     if (currentIndex === -1) {
       console.log(`[Rise Extension] Could not find current sparkle-fountain block in content area`);
+      window.movementInProgress = false;
       return;
     }
     
@@ -813,7 +823,7 @@
       // Move the entire Rise block before the previous block
       const targetBlock = allBlocks[currentIndex - 1];
       contentArea.insertBefore(riseBlock, targetBlock);
-      console.log(`[Rise Extension] Moved sparkle-fountain block up`);
+      console.log(`[Rise Extension] Moved sparkle-fountain block up from index ${currentIndex} to ${currentIndex - 1}`);
     } else if (direction === 'down' && currentIndex < allBlocks.length - 1) {
       // Move the entire Rise block after the next block
       const targetBlock = allBlocks[currentIndex + 1];
@@ -822,10 +832,16 @@
       } else {
         contentArea.appendChild(riseBlock);
       }
-      console.log(`[Rise Extension] Moved sparkle-fountain block down`);
+      console.log(`[Rise Extension] Moved sparkle-fountain block down from index ${currentIndex} to ${currentIndex + 1}`);
     } else {
-      console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'}`);
+      console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'} (index ${currentIndex})`);
     }
+    
+    // Re-attach event listeners after DOM manipulation
+    setTimeout(() => {
+      addInteractionControls();
+      window.movementInProgress = false;
+    }, 200);
   }
 
   // Function to delete interaction
