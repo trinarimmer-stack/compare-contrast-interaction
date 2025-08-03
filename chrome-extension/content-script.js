@@ -417,15 +417,44 @@
       `data-interaction-type="compare-contrast" data-config='${configData}'`
     );
 
-    // Find the current cursor position or active block area - try multiple Rise 360 selectors
-    const activeArea = document.querySelector('.blocks-authoring .blocks-content') ||
-                      document.querySelector('.lesson-content') ||
-                      document.querySelector('.blocks-content') ||
-                      document.querySelector('[data-testid="lesson-content"]') ||
-                      document.querySelector('[data-testid="content-area"]') || 
-                      document.querySelector('.content-area') ||
-                      document.querySelector('.blocks-authoring') ||
-                      document.body;
+    // Find the correct content insertion point in Rise 360
+    const possibleTargets = [
+      // Try lesson content areas first
+      '.lesson-blocks',
+      '.lesson-content .blocks',
+      '.lesson-content',
+      '.blocks-content',
+      '.content-blocks',
+      '[data-testid="lesson-content"]',
+      '[data-testid="content-area"]',
+      '.content-area',
+      // Then try blocks authoring areas
+      '.blocks-authoring .lesson-blocks',
+      '.blocks-authoring .blocks-content', 
+      '.blocks-authoring .content-area',
+      // Finally fallback to main authoring area
+      '.blocks-authoring'
+    ];
+    
+    let activeArea = null;
+    for (const selector of possibleTargets) {
+      activeArea = document.querySelector(selector);
+      if (activeArea) {
+        console.log(`[Rise Extension] Found content area with selector: ${selector}`);
+        console.log('[Rise Extension] Content area details:', {
+          className: activeArea.className,
+          childCount: activeArea.children.length,
+          firstChild: activeArea.children[0]?.tagName,
+          size: `${activeArea.offsetWidth}x${activeArea.offsetHeight}`
+        });
+        break;
+      }
+    }
+    
+    if (!activeArea) {
+      activeArea = document.body;
+      console.log('[Rise Extension] No specific content area found, using body as fallback');
+    }
 
     console.log('[Rise Extension] Active area found:', activeArea);
 
