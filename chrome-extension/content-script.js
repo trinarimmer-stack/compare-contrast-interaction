@@ -381,9 +381,10 @@
   function insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder) {
     console.log('[Rise Extension] Inserting configured interaction:', { title, prompt, ideal, placeholder });
     
-    // Check if we're already in the process of adding an interaction to prevent duplicates
+    // Check if we're already in the process of adding an interaction to prevent rapid duplicates
     if (window.insertingInteraction) {
-      console.log('[Rise Extension] Already inserting interaction, skipping duplicate');
+      console.log('[Rise Extension] Already inserting interaction, waiting briefly...');
+      setTimeout(() => insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder), 100);
       return;
     }
     
@@ -392,12 +393,16 @@
     // Store the configuration globally so the injected script can access it
     window.compareContrastConfig = { title, prompt, idealResponse: ideal, placeholder };
     
+    // Generate unique ID for this interaction
+    const interactionId = 'compare-contrast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
     const configData = JSON.stringify({ title, prompt, idealResponse: ideal, placeholder });
     // Use base64 encoding to avoid HTML attribute parsing issues
     const encodedConfigData = btoa(configData);
     
     const interactionHtml = `
       <div class="compare-contrast-interaction" 
+           id="${interactionId}"
            data-interaction-type="compare-contrast" 
            data-config-base64="${encodedConfigData}"
            style="
