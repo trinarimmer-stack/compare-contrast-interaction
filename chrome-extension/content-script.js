@@ -231,6 +231,7 @@
           </div>
           <div class="interaction-config">
             <button class="config-btn" onclick="openConfigModal(this)">⚙️ Configure</button>
+            <button class="edit-btn" onclick="editInteraction(this)" style="display: none;">✏️ Edit</button>
           </div>
         </div>
       </div>
@@ -322,7 +323,7 @@
   }
 
   // Configuration modal for customizing the interaction
-  function createConfigModal() {
+  function createConfigModal(existingConfig = {}) {
     const modal = document.createElement('div');
     modal.className = 'compare-contrast-config-modal';
     modal.innerHTML = `
@@ -334,20 +335,20 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label>Title:</label>
-              <input type="text" id="interaction-title" value="Compare & Contrast" />
+              <label>Activity Instructions:</label>
+              <textarea id="interaction-instructions" rows="3">${existingConfig.activityInstructions || "It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach."}</textarea>
             </div>
             <div class="form-group">
               <label>Prompt:</label>
-              <textarea id="interaction-prompt" rows="3">Think about a specific situation and describe your approach.</textarea>
+              <textarea id="interaction-prompt" rows="3">${existingConfig.prompt || "Think about a specific situation and describe your approach."}</textarea>
             </div>
             <div class="form-group">
               <label>Ideal Response:</label>
-              <textarea id="interaction-ideal" rows="4">An effective response would typically include clear reasoning and specific examples.</textarea>
+              <textarea id="interaction-ideal" rows="4">${existingConfig.idealResponse || "An effective response would typically include clear reasoning and specific examples."}</textarea>
             </div>
             <div class="form-group">
               <label>Placeholder Text:</label>
-              <input type="text" id="interaction-placeholder" value="Type your response here..." />
+              <input type="text" id="interaction-placeholder" value="${existingConfig.placeholder || "Type your response here..."}" />
             </div>
           </div>
           <div class="modal-footer">
@@ -387,25 +388,65 @@
     document.body.appendChild(modal);
   };
 
+  // Edit existing interaction function
+  window.editInteraction = function(element) {
+    const interactionContainer = element.closest('.compare-contrast-interaction');
+    if (!interactionContainer) return;
+    
+    // Get current configuration from the interaction
+    const currentConfig = getInteractionConfig(interactionContainer);
+    const modal = createConfigModal(currentConfig);
+    modal.dataset.editingInteraction = 'true';
+    modal.dataset.targetInteraction = interactionContainer.id || 'current';
+    document.body.appendChild(modal);
+  };
+
+  // Helper function to extract current config from interaction
+  function getInteractionConfig(interactionElement) {
+    try {
+      // Try to get from data attribute first
+      if (interactionElement.dataset.configBase64) {
+        const decodedConfig = atob(interactionElement.dataset.configBase64);
+        return JSON.parse(decodedConfig);
+      }
+      if (interactionElement.dataset.config) {
+        return JSON.parse(interactionElement.dataset.config);
+      }
+    } catch (e) {
+      console.log('[Rise Extension] Error parsing existing config:', e);
+    }
+    
+    // Fallback to default values
+    return {
+      activityInstructions: "It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.",
+      prompt: "Think about a specific situation and describe your approach.",
+      idealResponse: "An effective response would typically include clear reasoning and specific examples.",
+      placeholder: "Type your response here..."
+    };
+  }
+
   window.closeConfigModal = function() {
     const modal = document.querySelector('.compare-contrast-config-modal');
     if (modal) modal.remove();
   };
 
   window.saveConfiguration = function() {
+    const modal = document.querySelector('.compare-contrast-config-modal');
+    const isEditing = modal && modal.dataset.editingInteraction === 'true';
+    
     // Get configuration values from the form
-    const title = document.getElementById('interaction-title').value;
+    const activityInstructions = document.getElementById('interaction-instructions').value;
     const prompt = document.getElementById('interaction-prompt').value;
     const ideal = document.getElementById('interaction-ideal').value;
     const placeholder = document.getElementById('interaction-placeholder').value;
 
-    console.log('[Rise Extension] Saving configuration:', { title, prompt, ideal, placeholder });
+    console.log('[Rise Extension] Saving configuration:', { activityInstructions, prompt, ideal, placeholder });
 
     // Store configuration for future use
     try {
       if (chrome && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({
-          compareContrastConfig: { title, prompt, ideal, placeholder }
+          compareContrastConfig: { activityInstructions, prompt, idealResponse: ideal, placeholder }
         }, () => {
           if (chrome.runtime.lastError) {
             console.log('[Rise Extension] Storage error:', chrome.runtime.lastError);
@@ -416,33 +457,38 @@
       console.log('[Rise Extension] Storage access error:', error);
     }
 
-    // Close modal and insert the configured interaction
+    // Close modal
     closeConfigModal();
     
-    // Insert the interaction with custom values
-    insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder);
+    if (isEditing) {
+      // Update existing interaction
+      updateExistingInteraction(activityInstructions, prompt, ideal, placeholder);
+    } else {
+      // Insert new interaction with custom values
+      insertCompareContrastBlockWithConfig(activityInstructions, prompt, ideal, placeholder);
+    }
   };
   
   // Updated function to insert interaction with custom configuration
-  function insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder) {
-    console.log('[Rise Extension] Inserting configured interaction:', { title, prompt, ideal, placeholder });
+  function insertCompareContrastBlockWithConfig(activityInstructions, prompt, ideal, placeholder) {
+    console.log('[Rise Extension] Inserting configured interaction:', { activityInstructions, prompt, ideal, placeholder });
     
     // Check if we're already in the process of adding an interaction to prevent rapid duplicates
     if (window.insertingInteraction) {
       console.log('[Rise Extension] Already inserting interaction, waiting briefly...');
-      setTimeout(() => insertCompareContrastBlockWithConfig(title, prompt, ideal, placeholder), 100);
+      setTimeout(() => insertCompareContrastBlockWithConfig(activityInstructions, prompt, ideal, placeholder), 100);
       return;
     }
     
     window.insertingInteraction = true;
     
     // Store the configuration globally so the injected script can access it
-    window.compareContrastConfig = { title, prompt, idealResponse: ideal, placeholder };
+    window.compareContrastConfig = { activityInstructions, prompt, idealResponse: ideal, placeholder };
     
     // Generate unique ID for this interaction
     const interactionId = 'compare-contrast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
-    const configData = JSON.stringify({ title, prompt, idealResponse: ideal, placeholder });
+    const configData = JSON.stringify({ activityInstructions, prompt, idealResponse: ideal, placeholder });
     // Use base64 encoding to avoid HTML attribute parsing issues
     const encodedConfigData = btoa(configData);
     
@@ -1005,6 +1051,45 @@
         waitForRise().then(initializeExtension);
       }, 1000);
     });
+  }
+
+  // Function to update existing interaction
+  function updateExistingInteraction(activityInstructions, prompt, ideal, placeholder) {
+    console.log('[Rise Extension] Updating existing interaction');
+    
+    // Find the interaction that was being edited
+    const interactions = document.querySelectorAll('.compare-contrast-interaction');
+    let targetInteraction = interactions[interactions.length - 1]; // Default to most recent
+    
+    if (targetInteraction) {
+      const configData = JSON.stringify({ activityInstructions, prompt, idealResponse: ideal, placeholder });
+      const configBase64 = btoa(configData);
+      
+      // Update the interaction's stored configuration
+      targetInteraction.setAttribute('data-config-base64', configBase64);
+      targetInteraction.setAttribute('data-config', configData);
+      
+      // Update the preview display
+      const promptDisplay = targetInteraction.querySelector('p[style*="font-weight: bold"]');
+      if (promptDisplay) {
+        promptDisplay.innerHTML = `<strong>Prompt:</strong> ${prompt}`;
+      }
+      
+      const idealDisplay = targetInteraction.querySelector('p[style*="color: #888"]');
+      if (idealDisplay) {
+        idealDisplay.innerHTML = `<strong>Expected Response:</strong> ${ideal}`;
+      }
+      
+      const placeholderInput = targetInteraction.querySelector('textarea');
+      if (placeholderInput) {
+        placeholderInput.placeholder = placeholder;
+      }
+      
+      // Update the global config for the injected script
+      window.compareContrastConfig = { activityInstructions, prompt, idealResponse: ideal, placeholder };
+      
+      console.log('[Rise Extension] Interaction updated successfully');
+    }
   }
 
   // Initial load
