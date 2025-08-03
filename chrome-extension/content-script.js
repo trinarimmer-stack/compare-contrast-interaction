@@ -762,37 +762,65 @@
   // Function to move interaction up or down
   function moveInteraction(interactionId, direction) {
     const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
-    const contentArea = findActiveContentArea();
     
-    if (!contentArea) {
-      console.log(`[Rise Extension] Could not find content area for movement`);
+    if (!container) {
+      console.log(`[Rise Extension] Could not find interaction container for ${interactionId}`);
       return;
     }
     
-    // Get all direct children of the content area (these are the main blocks)
-    const allChildren = Array.from(contentArea.children);
-    const currentIndex = allChildren.indexOf(container);
+    // Debug: Find where the container actually is in the DOM
+    console.log(`[Rise Extension] Container parent:`, container.parentElement);
+    console.log(`[Rise Extension] Container parent class:`, container.parentElement?.className);
+    console.log(`[Rise Extension] Container grandparent:`, container.parentElement?.parentElement);
+    console.log(`[Rise Extension] Container grandparent class:`, container.parentElement?.parentElement?.className);
     
-    console.log(`[Rise Extension] Current index: ${currentIndex}, Total children: ${allChildren.length}`);
-    console.log(`[Rise Extension] All children:`, allChildren.map(child => child.className || child.tagName));
+    // Find the actual parent that contains all the blocks we can move between
+    let blockParent = container.parentElement;
     
-    if (direction === 'up' && currentIndex > 0) {
-      // Move before the previous sibling
-      const targetElement = allChildren[currentIndex - 1];
-      contentArea.insertBefore(container, targetElement);
-      console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
-    } else if (direction === 'down' && currentIndex < allChildren.length - 1) {
-      // Move after the next sibling
-      const targetElement = allChildren[currentIndex + 1];
-      if (targetElement.nextElementSibling) {
-        contentArea.insertBefore(container, targetElement.nextElementSibling);
-      } else {
-        contentArea.appendChild(container);
+    // Look for the parent that contains multiple block elements
+    while (blockParent && blockParent !== document.body) {
+      const siblings = Array.from(blockParent.children);
+      const blockSiblings = siblings.filter(child => 
+        child.classList.contains('compare-contrast-container') ||
+        child.classList.contains('sparkle-fountain') ||
+        child.classList.contains('block') ||
+        child.querySelector('.block')
+      );
+      
+      console.log(`[Rise Extension] Checking parent:`, blockParent.className);
+      console.log(`[Rise Extension] Block siblings found:`, blockSiblings.length);
+      
+      if (blockSiblings.length > 1) {
+        // This parent has multiple blocks, use it for movement
+        const currentIndex = blockSiblings.indexOf(container);
+        console.log(`[Rise Extension] Current index among block siblings: ${currentIndex}`);
+        console.log(`[Rise Extension] Block siblings:`, blockSiblings.map(child => child.className || child.tagName));
+        
+        if (direction === 'up' && currentIndex > 0) {
+          const targetElement = blockSiblings[currentIndex - 1];
+          blockParent.insertBefore(container, targetElement);
+          console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
+          return;
+        } else if (direction === 'down' && currentIndex < blockSiblings.length - 1) {
+          const targetElement = blockSiblings[currentIndex + 1];
+          if (targetElement.nextElementSibling) {
+            blockParent.insertBefore(container, targetElement.nextElementSibling);
+          } else {
+            blockParent.appendChild(container);
+          }
+          console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
+          return;
+        } else {
+          console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'}`);
+          return;
+        }
       }
-      console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
-    } else {
-      console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'}`);
+      
+      blockParent = blockParent.parentElement;
     }
+    
+    console.log(`[Rise Extension] Could not find suitable parent for movement`);
+  }
     
     // Re-attach event listeners after DOM manipulation
     setTimeout(() => addInteractionControls(), 100);
