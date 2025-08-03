@@ -389,21 +389,27 @@
     
     window.insertingInteraction = true;
     
+    // Store the configuration globally so the injected script can access it
+    window.compareContrastConfig = { title, prompt, idealResponse: ideal, placeholder };
+    
     const interactionHtml = `
-      <div class="compare-contrast-interaction" data-interaction-type="compare-contrast" style="
-        background: #f0f8ff;
-        border: 2px solid #0066cc;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-        display: block;
-        position: relative;
-        z-index: 1;
-      ">
+      <div class="compare-contrast-interaction" 
+           data-interaction-type="compare-contrast" 
+           data-config='${JSON.stringify({ title, prompt, idealResponse: ideal, placeholder })}'
+           style="
+             background: #f0f8ff;
+             border: 2px solid #0066cc;
+             border-radius: 8px;
+             padding: 20px;
+             margin: 20px 0;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+             width: 100%;
+             max-width: 100%;
+             box-sizing: border-box;
+             display: block;
+             position: relative;
+             z-index: 1;
+           ">
         <div class="interaction-container" style="width: 100%;">
           <div class="interaction-preview" style="
             background: white;
@@ -417,6 +423,7 @@
             </div>
             <div class="preview-content">
               <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
+              <p style="margin: 0 0 10px 0; font-size: 12px; color: #888;"><strong>Expected Response:</strong> ${ideal}</p>
               <textarea placeholder="${placeholder}" disabled style="
                 width: 100%;
                 min-height: 80px;

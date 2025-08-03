@@ -131,20 +131,40 @@
       // Check if already initialized
       if (element.dataset.initialized) return;
       
-      // Get configuration from storage (if available) or use defaults
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        // Extension context - use chrome storage
+      let config = {};
+      
+      // Try to get configuration from element's data attribute first
+      if (element.dataset.config) {
+        try {
+          config = JSON.parse(element.dataset.config);
+          console.log('[Compare & Contrast] Using element config:', config);
+        } catch (e) {
+          console.log('[Compare & Contrast] Error parsing element config:', e);
+        }
+      }
+      
+      // Fallback to chrome storage (extension context)
+      if (Object.keys(config).length === 0 && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['compareContrastConfig'], (result) => {
-          const config = result.compareContrastConfig || {};
-          createInteraction(element, config);
+          const storageConfig = result.compareContrastConfig || {};
+          const finalConfig = { ...config, ...storageConfig };
+          console.log('[Compare & Contrast] Using storage config:', finalConfig);
+          createInteraction(element, finalConfig);
           element.dataset.initialized = 'true';
         });
-      } else {
-        // Page context - use default config or attempt to get from window
-        const config = window.compareContrastConfig || {};
-        createInteraction(element, config);
-        element.dataset.initialized = 'true';
+        return; // Exit early since this is async
       }
+      
+      // Fallback to window config (page context)
+      if (Object.keys(config).length === 0) {
+        config = window.compareContrastConfig || {};
+        console.log('[Compare & Contrast] Using window config:', config);
+      }
+      
+      // Initialize with whatever config we have
+      console.log('[Compare & Contrast] Initializing with config:', config);
+      createInteraction(element, config);
+      element.dataset.initialized = 'true';
     });
   }
 
