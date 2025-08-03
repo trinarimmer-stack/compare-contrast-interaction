@@ -10,7 +10,7 @@ import { RiseCodeSnippet } from "./RiseCodeSnippet";
 import { Download, Eye, Edit3 } from "lucide-react";
 
 export const InteractionEditor = () => {
-  const [title, setTitle] = useState("Compare & Contrast");
+  const [activityInstructions, setActivityInstructions] = useState("It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.");
   const [prompt, setPrompt] = useState("Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.");
   const [idealResponse, setIdealResponse] = useState("An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.");
   const [placeholder, setPlaceholder] = useState("Type your response here...");
@@ -22,7 +22,7 @@ export const InteractionEditor = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>Compare & Contrast</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -65,7 +65,7 @@ export const InteractionEditor = () => {
             return (
                 <div className="max-w-4xl mx-auto">
                     <div className="card p-6">
-                        <h2 className="text-lg font-semibold mb-2">${title}</h2>
+                        <h2 className="text-lg font-semibold mb-2">Compare & Contrast</h2>
                         <p className="text-gray-600 mb-6">${prompt}</p>
                         
                         {!isComparing ? (
@@ -130,7 +130,7 @@ export const InteractionEditor = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_interaction.html`;
+    a.download = `Compare_Contrast_interaction.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -147,16 +147,18 @@ export const InteractionEditor = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="activityInstructions">Activity Instructions</Label>
+            <Textarea
+              id="activityInstructions"
+              value={activityInstructions}
+              onChange={(e) => setActivityInstructions(e.target.value)}
+              placeholder="Instructions that appear at the top of the interaction"
+              rows={3}
+            />
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter interaction title"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
@@ -211,7 +213,7 @@ export const InteractionEditor = () => {
       </Card>
 
       <RiseCodeSnippet
-        title={title}
+        activityInstructions={activityInstructions}
         prompt={prompt}
         idealResponse={idealResponse}
         placeholder={placeholder}
@@ -226,7 +228,7 @@ export const InteractionEditor = () => {
               Live Preview
             </h3>
             <CompareContrastInteraction
-              title={title}
+              title="Compare & Contrast"
               prompt={prompt}
               idealResponse={idealResponse}
               placeholder={placeholder}

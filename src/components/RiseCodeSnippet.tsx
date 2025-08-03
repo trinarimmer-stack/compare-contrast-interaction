@@ -6,14 +6,14 @@ import { Copy, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface RiseCodeSnippetProps {
-  title?: string;
+  activityInstructions?: string;
   prompt?: string;
   idealResponse?: string;
   placeholder?: string;
 }
 
 export const RiseCodeSnippet = ({
-  title = "Compare & Contrast",
+  activityInstructions = "It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.",
   prompt = "Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.",
   idealResponse = "An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.",
   placeholder = "Type your response here..."
@@ -24,7 +24,12 @@ export const RiseCodeSnippet = ({
     const widgetId = `compare-contrast-widget-${Date.now()}`;
     return `<div id="${widgetId}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
   <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 24px;">
-    <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">${title}</h2>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+      <h1 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #1f2937;">📝 Compare and Contrast</h1>
+      <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.5;">${activityInstructions}</p>
+    </div>
+    
+    <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1f2937;">Compare & Contrast</h2>
     <p style="margin: 0 0 24px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">${prompt}</p>
     
     <div id="${widgetId}-input-section">
@@ -147,7 +152,7 @@ if (document.getElementById('${widgetId}-compare-btn')) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_rise_snippet.html`;
+    a.download = `Compare_Contrast_rise_snippet.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

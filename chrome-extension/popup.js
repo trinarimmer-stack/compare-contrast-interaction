@@ -75,9 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div style="padding: 20px;">
           <div style="margin-bottom: 16px;">
-            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Title:</label>
-            <input type="text" id="modal-title" value="${config.title || 'Compare & Contrast'}" 
-                   style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+            <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Activity Instructions:</label>
+            <textarea id="modal-activity-instructions" rows="3" 
+                      style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; resize: vertical;">${config.activityInstructions || "It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach."}</textarea>
           </div>
           <div style="margin-bottom: 16px;">
             <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #374151;">Prompt:</label>
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       document.getElementById('modal-save').addEventListener('click', () => {
         const newConfig = {
-          title: document.getElementById('modal-title').value,
+          activityInstructions: document.getElementById('modal-activity-instructions').value,
           prompt: document.getElementById('modal-prompt').value,
           idealResponse: document.getElementById('modal-ideal').value,
           placeholder: document.getElementById('modal-placeholder').value

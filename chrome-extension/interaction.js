@@ -8,6 +8,7 @@
   function createInteraction(container, config = {}) {
     const defaultConfig = {
       title: "Compare & Contrast",
+      activityInstructions: "It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.",
       prompt: "Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.",
       idealResponse: "An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.",
       placeholder: "Type your response here..."
@@ -31,7 +32,7 @@
           <div class="interaction-header">
             <div class="header-card">
               <h1 class="header-title">📝 Compare and Contrast</h1>
-              <p class="header-description">It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the "Compare Responses" button to see how your response measures up to Julie's recommended approach.</p>
+              <p class="header-description">${finalConfig.activityInstructions}</p>
               <div class="header-tip">
                 <span>💡 Tip: Take your time to think through your answer before comparing</span>
               </div>
