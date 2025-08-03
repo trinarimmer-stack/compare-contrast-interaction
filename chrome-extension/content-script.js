@@ -284,7 +284,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h3>Configure Compare & Contrast</h3>
-            <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+            <button class="close-btn">&times;</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -305,12 +305,33 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button onclick="saveConfiguration()">Save</button>
-            <button onclick="closeConfigModal()">Cancel</button>
+            <button class="save-btn">Save</button>
+            <button class="cancel-btn">Cancel</button>
           </div>
         </div>
       </div>
     `;
+    
+    // Add event listeners for buttons
+    const closeBtn = modal.querySelector('.close-btn');
+    const cancelBtn = modal.querySelector('.cancel-btn');
+    const saveBtn = modal.querySelector('.save-btn');
+    const overlay = modal.querySelector('.modal-overlay');
+    
+    // Close modal events
+    closeBtn.addEventListener('click', () => window.closeConfigModal());
+    cancelBtn.addEventListener('click', () => window.closeConfigModal());
+    
+    // Close when clicking outside the modal content
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        window.closeConfigModal();
+      }
+    });
+    
+    // Save configuration event
+    saveBtn.addEventListener('click', () => window.saveConfiguration());
+    
     return modal;
   }
 
