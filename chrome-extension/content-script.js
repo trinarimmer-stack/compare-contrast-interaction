@@ -257,9 +257,19 @@
       activeArea.appendChild(container.firstElementChild);
       console.log('[Rise Extension] Interactive component added to page');
       
-      // Inject the actual interactive functionality for preview
+      // Always inject the interactive script so it works in preview mode
       injectInteractiveScript();
       console.log('[Rise Extension] Interactive script injected');
+      
+      // Force initialization of any interactions on the page
+      setTimeout(() => {
+        if (window.initializeCompareContrastInteraction) {
+          const newInteraction = document.querySelector('[data-interaction-type="compare-contrast"]:not([data-initialized])');
+          if (newInteraction) {
+            window.initializeCompareContrastInteraction(newInteraction);
+          }
+        }
+      }, 100);
     } catch (error) {
       console.error('[Rise Extension] Error inserting component:', error);
     }
@@ -295,7 +305,15 @@
         
         /* Hide authoring controls in preview mode */
         body[data-rise-mode="preview"] .interaction-controls,
-        body[data-mode="preview"] .interaction-controls {
+        body[data-mode="preview"] .interaction-controls,
+        body[data-rise-mode="preview"] .interaction-config,
+        body[data-mode="preview"] .interaction-config {
+          display: none !important;
+        }
+        
+        /* Also hide the custom block button in preview */
+        body[data-rise-mode="preview"] .compare-contrast-block-btn,
+        body[data-mode="preview"] .compare-contrast-block-btn {
           display: none !important;
         }
       `;

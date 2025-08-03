@@ -228,7 +228,6 @@ export const InteractionEditor = () => {
               Live Preview
             </h3>
             <CompareContrastInteraction
-              title="Compare & Contrast"
               prompt={prompt}
               idealResponse={idealResponse}
               placeholder={placeholder}
