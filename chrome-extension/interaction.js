@@ -99,24 +99,40 @@
       const resetBtn = container.querySelector('#reset-button');
 
       if (textarea) {
-        textarea.addEventListener('input', (e) => {
-          setState({ userResponse: e.target.value });
+        // Remove any existing listeners to prevent conflicts
+        textarea.removeEventListener('input', handleTextareaChange);
+        textarea.addEventListener('input', handleTextareaChange);
+        
+        // Also listen for other input events that might be interfered with
+        textarea.addEventListener('keyup', handleTextareaChange);
+        textarea.addEventListener('paste', (e) => {
+          setTimeout(() => handleTextareaChange(e), 10);
         });
       }
 
-      if (compareBtn) {
-        compareBtn.addEventListener('click', () => {
-          if (state.userResponse.trim()) {
-            setState({ isComparing: true });
-          }
-        });
+      if (compareBtn && !compareBtn.hasAttribute('data-listener-added')) {
+        compareBtn.addEventListener('click', handleCompareClick);
+        compareBtn.setAttribute('data-listener-added', 'true');
       }
 
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          setState({ userResponse: "", isComparing: false });
-        });
+      if (resetBtn && !resetBtn.hasAttribute('data-listener-added')) {
+        resetBtn.addEventListener('click', handleResetClick);
+        resetBtn.setAttribute('data-listener-added', 'true');
       }
+    }
+
+    function handleTextareaChange(e) {
+      setState({ userResponse: e.target.value });
+    }
+
+    function handleCompareClick() {
+      if (state.userResponse.trim()) {
+        setState({ isComparing: true });
+      }
+    }
+
+    function handleResetClick() {
+      setState({ userResponse: "", isComparing: false });
     }
 
     // Initial render

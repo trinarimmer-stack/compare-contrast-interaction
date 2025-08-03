@@ -392,10 +392,13 @@
     // Store the configuration globally so the injected script can access it
     window.compareContrastConfig = { title, prompt, idealResponse: ideal, placeholder };
     
+    const configData = JSON.stringify({ title, prompt, idealResponse: ideal, placeholder });
+    const escapedConfigData = configData.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+    
     const interactionHtml = `
       <div class="compare-contrast-interaction" 
            data-interaction-type="compare-contrast" 
-           data-config='${JSON.stringify({ title, prompt, idealResponse: ideal, placeholder })}'
+           data-config='${escapedConfigData}'
            style="
              background: #f0f8ff;
              border: 2px solid #0066cc;
@@ -458,13 +461,6 @@
         </div>
       </div>
     `;
-
-    // Store the configuration in the HTML for the interaction script
-    const configData = JSON.stringify({ title, prompt, ideal, placeholder });
-    const fullHtml = interactionHtml.replace(
-      'data-interaction-type="compare-contrast"',
-      `data-interaction-type="compare-contrast" data-config='${configData}'`
-    );
 
     // Find the correct content insertion point in Rise 360 with detailed analysis
     console.log('[Rise Extension] Analyzing DOM structure to find lesson content...');
@@ -570,7 +566,7 @@
 
     // Create a container and insert the interaction
     const container = document.createElement('div');
-    container.innerHTML = fullHtml;
+    container.innerHTML = interactionHtml;
     const interactionElement = container.firstElementChild;
     console.log('[Rise Extension] Container created with configured HTML');
     
