@@ -504,13 +504,48 @@
 
     console.log('[Rise Extension] Active area found:', activeArea);
 
+    // Look for existing blocks and insertion points in Rise 360
+    const existingBlocks = activeArea.querySelectorAll('[class*="block"]:not(.compare-contrast)');
+    const insertionPoints = activeArea.querySelectorAll('[class*="insert"], [class*="add-block"], .block-insert, .add-button');
+    
+    console.log('[Rise Extension] Found existing blocks:', existingBlocks.length);
+    console.log('[Rise Extension] Found insertion points:', insertionPoints.length);
+    
+    if (existingBlocks.length > 0) {
+      console.log('[Rise Extension] Existing block structure:', Array.from(existingBlocks).slice(0, 3).map(block => ({
+        className: block.className,
+        tagName: block.tagName,
+        parent: block.parentElement?.className
+      })));
+    }
+
     // Create a container and insert the interaction
     const container = document.createElement('div');
     container.innerHTML = fullHtml;
+    const interactionElement = container.firstElementChild;
     console.log('[Rise Extension] Container created with configured HTML');
     
     try {
-      activeArea.appendChild(container.firstElementChild);
+      // Strategy 1: Try to insert after the last existing block
+      if (existingBlocks.length > 0) {
+        const lastBlock = existingBlocks[existingBlocks.length - 1];
+        console.log('[Rise Extension] Attempting to insert after last block:', lastBlock.className);
+        lastBlock.parentElement.insertBefore(interactionElement, lastBlock.nextSibling);
+        console.log('[Rise Extension] Inserted after existing block');
+      } 
+      // Strategy 2: Try to insert at an insertion point
+      else if (insertionPoints.length > 0) {
+        const insertionPoint = insertionPoints[0];
+        console.log('[Rise Extension] Attempting to insert at insertion point:', insertionPoint.className);
+        insertionPoint.parentElement.insertBefore(interactionElement, insertionPoint.nextSibling);
+        console.log('[Rise Extension] Inserted at insertion point');
+      }
+      // Strategy 3: Append to the active area as fallback
+      else {
+        console.log('[Rise Extension] No blocks or insertion points found, appending to active area');
+        activeArea.appendChild(interactionElement);
+        console.log('[Rise Extension] Appended to active area');
+      }
       console.log('[Rise Extension] Configured interactive component added to page');
       
       // Inject the actual interactive functionality for preview
