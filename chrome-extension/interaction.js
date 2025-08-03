@@ -205,6 +205,37 @@
     });
   }
 
+  // Export initialization function for external access
+  window.initializeCompareContrastInteraction = function(element) {
+    if (element && !element.dataset.initialized) {
+      try {
+        let config = {};
+        
+        // Try to get configuration from element's base64 data attribute first
+        if (element.dataset.configBase64) {
+          try {
+            const decodedConfig = atob(element.dataset.configBase64);
+            config = JSON.parse(decodedConfig);
+            console.log('[Compare & Contrast] External init using base64 config:', config);
+          } catch (e) {
+            console.log('[Compare & Contrast] Error parsing base64 config in external init:', e);
+          }
+        }
+        
+        // Fallback to element config or window config
+        if (Object.keys(config).length === 0) {
+          config = element.dataset.config ? JSON.parse(element.dataset.config) : (window.compareContrastConfig || {});
+        }
+        
+        createInteraction(element, config);
+        element.dataset.initialized = 'true';
+        console.log('[Compare & Contrast] External initialization successful');
+      } catch (error) {
+        console.error('[Compare & Contrast] External initialization failed:', error);
+      }
+    }
+  };
+
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeInteractions);
@@ -212,19 +243,36 @@
     initializeInteractions();
   }
 
-  // Also watch for dynamically added interactions
+  // Enhanced observer for dynamically added interactions
   const observer = new MutationObserver((mutations) => {
+    let shouldInitialize = false;
+    
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
+          // Check if the node itself is an interaction
           if (node.dataset && node.dataset.interactionType === 'compare-contrast') {
-            initializeInteractions();
-          } else if (node.querySelector && node.querySelector('[data-interaction-type="compare-contrast"]')) {
-            initializeInteractions();
+            shouldInitialize = true;
+          }
+          // Check if the node contains interactions
+          else if (node.querySelector && node.querySelector('[data-interaction-type="compare-contrast"]')) {
+            shouldInitialize = true;
+          }
+          // Also check for class-based selectors that might be used
+          else if (node.classList && node.classList.contains('compare-contrast-interaction')) {
+            shouldInitialize = true;
+          }
+          else if (node.querySelector && node.querySelector('.compare-contrast-interaction')) {
+            shouldInitialize = true;
           }
         }
       });
     });
+    
+    if (shouldInitialize) {
+      // Small delay to ensure DOM is fully updated
+      setTimeout(initializeInteractions, 100);
+    }
   });
 
   observer.observe(document.body, {

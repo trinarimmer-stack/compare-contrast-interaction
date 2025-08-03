@@ -776,8 +776,24 @@
       document.head.appendChild(style);
     }
 
-    // Create floating button (simplified approach - no Block Library detection)
+    // Detect if we're in preview mode
+    const isPreviewMode = () => {
+      return window.location.href.includes('/preview') || 
+             window.location.href.includes('/published') ||
+             document.querySelector('[data-testid*="preview"]') ||
+             document.querySelector('.preview-mode') ||
+             document.body.classList.contains('preview-mode') ||
+             document.documentElement.classList.contains('preview-mode');
+    };
+
+    // Create floating button only in editing mode
     const createFloatingButton = () => {
+      // Don't show floating button in preview mode
+      if (isPreviewMode()) {
+        console.log('[Rise Extension] Preview mode detected - hiding floating button');
+        return;
+      }
+
       // Check if floating button already exists
       if (document.getElementById('rise-compare-contrast-fab')) {
         console.log('[Rise Extension] Floating button already exists');
@@ -828,8 +844,28 @@
       console.log('[Rise Extension] Floating button created and shown');
     };
 
-    // Just create the floating button - simplified approach
-    createFloatingButton();
+    // Initialize existing interactions in preview mode
+    if (isPreviewMode()) {
+      console.log('[Rise Extension] Preview mode - initializing existing interactions');
+      // Ensure interaction script is loaded
+      injectInteractiveScript();
+      
+      // Wait for interactions to be available and initialize them
+      setTimeout(() => {
+        const interactions = document.querySelectorAll('.compare-contrast-interaction');
+        console.log(`[Rise Extension] Found ${interactions.length} interactions to initialize`);
+        
+        interactions.forEach(interaction => {
+          // Trigger initialization of each interaction
+          if (window.initializeCompareContrastInteraction) {
+            window.initializeCompareContrastInteraction(interaction);
+          }
+        });
+      }, 1000);
+    } else {
+      // Only create floating button in editing mode
+      createFloatingButton();
+    }
   }
 
   // Watch for navigation changes (SPA routing)
