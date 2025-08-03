@@ -272,7 +272,35 @@
     const script = document.createElement('script');
     script.id = 'compare-contrast-script';
     script.src = chrome.runtime.getURL('interaction.js');
+    
+    // Also add a data attribute to the body to indicate script is loaded
+    script.onload = () => {
+      document.body.setAttribute('data-compare-contrast-loaded', 'true');
+      console.log('[Rise Extension] Interactive script loaded successfully');
+    };
+    
     document.head.appendChild(script);
+    
+    // Also inject CSS for the interaction
+    if (!document.getElementById('compare-contrast-interaction-css')) {
+      const css = document.createElement('style');
+      css.id = 'compare-contrast-interaction-css';
+      css.textContent = `
+        /* Ensure interaction is visible in all modes */
+        .compare-contrast-interaction {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        /* Hide authoring controls in preview mode */
+        body[data-rise-mode="preview"] .interaction-controls,
+        body[data-mode="preview"] .interaction-controls {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(css);
+    }
   }
 
   // Configuration modal for customizing the interaction
@@ -401,74 +429,79 @@
     const encodedConfigData = btoa(configData);
     
     const interactionHtml = `
-      <div class="compare-contrast-container" style="position: relative; margin: 20px 0;">
+      <div class="block block--mounted block--playback-mode-slides compare-contrast-container" 
+           style="position: relative; margin: 20px 0;" 
+           data-block-type="compare-contrast">
         <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 1000; display: flex; gap: 5px;">
           <button class="move-up-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Up">↑</button>
           <button class="move-down-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Down">↓</button>
           <button class="delete-btn" data-interaction-id="${interactionId}" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Delete">×</button>
         </div>
-        <div class="compare-contrast-interaction" 
-             id="${interactionId}"
-             data-interaction-type="compare-contrast" 
-             data-config-base64="${encodedConfigData}"
-             style="
-             background: #f0f8ff;
-             border: 2px solid #0066cc;
-             border-radius: 8px;
-             padding: 20px;
-             margin: 20px 0;
-             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-             width: 100%;
-             max-width: 100%;
-             box-sizing: border-box;
-             display: block;
-             position: relative;
-             z-index: 1;
-           ">
-        <div class="interaction-container" style="width: 100%;">
-          <div class="interaction-preview" style="
-            background: white;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 10px;
-          ">
-            <div class="preview-header" style="margin-bottom: 15px;">
-              <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">${title}</h3>
-              <p style="color: #666; margin: 0; font-size: 14px;">This is a preview. The interaction will be fully functional when published.</p>
+        <div class="block__inner">
+          <div class="compare-contrast-interaction" 
+               id="${interactionId}"
+               data-interaction-type="compare-contrast" 
+               data-config-base64="${encodedConfigData}"
+               style="
+               background: #f0f8ff;
+               border: 2px solid #0066cc;
+               border-radius: 8px;
+               padding: 20px;
+               margin: 20px 0;
+               box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+               width: 100%;
+               max-width: 100%;
+               box-sizing: border-box;
+               display: block;
+               position: relative;
+               z-index: 1;
+             ">
+            <div class="interaction-container" style="width: 100%;">
+              <div class="interaction-preview" style="
+                background: white;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 10px;
+              ">
+                <div class="preview-header" style="margin-bottom: 15px;">
+                  <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">${title}</h3>
+                  <p style="color: #666; margin: 0; font-size: 14px;">📝 Interactive Learning Activity - Will be fully functional in preview/published mode</p>
+                </div>
+                <div class="preview-content">
+                  <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
+                  <p style="margin: 0 0 10px 0; font-size: 12px; color: #888;"><strong>Expected Response:</strong> ${ideal}</p>
+                  <textarea placeholder="${placeholder}" disabled style="
+                    width: 100%;
+                    min-height: 80px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    resize: vertical;
+                    font-family: inherit;
+                    background: #f9f9f9;
+                  "></textarea>
+                  <button disabled style="
+                    margin-top: 10px;
+                    padding: 8px 16px;
+                    background: #ccc;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: not-allowed;
+                  ">Compare Responses (Preview Mode)</button>
+                </div>
+              </div>
+              <div class="interaction-config" style="text-align: center;">
+                <button class="config-btn" onclick="window.openConfigModal()" style="
+                  background: #0066cc;
+                  color: white;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                  font-size: 14px;
+                ">Edit Configuration</button>
+              </div>
             </div>
-            <div class="preview-content">
-              <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
-              <p style="margin: 0 0 10px 0; font-size: 12px; color: #888;"><strong>Expected Response:</strong> ${ideal}</p>
-              <textarea placeholder="${placeholder}" disabled style="
-                width: 100%;
-                min-height: 80px;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                resize: vertical;
-                font-family: inherit;
-                background: #f9f9f9;
-              "></textarea>
-              <button disabled style="
-                margin-top: 10px;
-                padding: 8px 16px;
-                background: #ccc;
-                border: none;
-                border-radius: 4px;
-                cursor: not-allowed;
-              ">Compare Responses</button>
-            </div>
-          </div>
-          <div class="interaction-config" style="text-align: center;">
-            <button class="config-btn" onclick="window.openConfigModal()" style="
-              background: #0066cc;
-              color: white;
-              border: none;
-              padding: 8px 16px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 14px;
-            ">Edit Configuration</button>
           </div>
         </div>
       </div>
