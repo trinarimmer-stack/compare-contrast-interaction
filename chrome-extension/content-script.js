@@ -401,11 +401,17 @@
     const encodedConfigData = btoa(configData);
     
     const interactionHtml = `
-      <div class="compare-contrast-interaction" 
-           id="${interactionId}"
-           data-interaction-type="compare-contrast" 
-           data-config-base64="${encodedConfigData}"
-           style="
+      <div class="compare-contrast-container" style="position: relative; margin: 20px 0;">
+        <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 1000; display: flex; gap: 5px;">
+          <button class="move-up-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Up">↑</button>
+          <button class="move-down-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Down">↓</button>
+          <button class="delete-btn" data-interaction-id="${interactionId}" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Delete">×</button>
+        </div>
+        <div class="compare-contrast-interaction" 
+             id="${interactionId}"
+             data-interaction-type="compare-contrast" 
+             data-config-base64="${encodedConfigData}"
+             style="
              background: #f0f8ff;
              border: 2px solid #0066cc;
              border-radius: 8px;
@@ -634,6 +640,9 @@
       // Inject the actual interactive functionality for preview
       injectInteractiveScript();
       console.log('[Rise Extension] Interactive script injected');
+      
+      // Add event listeners for control buttons
+      addInteractionControls();
     } catch (error) {
       console.error('[Rise Extension] Error inserting configured component:', error);
     }
@@ -642,6 +651,74 @@
     setTimeout(() => {
       window.insertingInteraction = false;
     }, 1000);
+  }
+
+  // Function to add event listeners for interaction controls
+  function addInteractionControls() {
+    // Move up buttons
+    document.querySelectorAll('.move-up-btn').forEach(btn => {
+      if (!btn.hasAttribute('data-listener-added')) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const interactionId = btn.getAttribute('data-interaction-id');
+          moveInteraction(interactionId, 'up');
+        });
+        btn.setAttribute('data-listener-added', 'true');
+      }
+    });
+
+    // Move down buttons
+    document.querySelectorAll('.move-down-btn').forEach(btn => {
+      if (!btn.hasAttribute('data-listener-added')) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const interactionId = btn.getAttribute('data-interaction-id');
+          moveInteraction(interactionId, 'down');
+        });
+        btn.setAttribute('data-listener-added', 'true');
+      }
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      if (!btn.hasAttribute('data-listener-added')) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const interactionId = btn.getAttribute('data-interaction-id');
+          deleteInteraction(interactionId);
+        });
+        btn.setAttribute('data-listener-added', 'true');
+      }
+    });
+  }
+
+  // Function to move interaction up or down
+  function moveInteraction(interactionId, direction) {
+    const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
+    const parent = container.parentNode;
+    
+    if (direction === 'up') {
+      const prevSibling = container.previousElementSibling;
+      if (prevSibling) {
+        parent.insertBefore(container, prevSibling);
+      }
+    } else if (direction === 'down') {
+      const nextSibling = container.nextElementSibling;
+      if (nextSibling) {
+        parent.insertBefore(nextSibling, container);
+      }
+    }
+  }
+
+  // Function to delete interaction
+  function deleteInteraction(interactionId) {
+    if (confirm('Are you sure you want to delete this interaction?')) {
+      const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
+      container.remove();
+    }
   }
 
   // Initialize the extension - simplified version

@@ -122,7 +122,15 @@
     }
 
     function handleTextareaChange(e) {
-      setState({ userResponse: e.target.value });
+      // Update state without triggering re-render to preserve focus
+      state.userResponse = e.target.value;
+      
+      // Update button state based on content
+      const compareBtn = container.querySelector('#compare-button');
+      if (compareBtn) {
+        compareBtn.disabled = !state.userResponse.trim();
+        compareBtn.style.opacity = state.userResponse.trim() ? '1' : '0.5';
+      }
     }
 
     function handleCompareClick() {
