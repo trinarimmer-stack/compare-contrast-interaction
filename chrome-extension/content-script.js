@@ -733,26 +733,37 @@
     const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
     const parent = container.parentNode;
     
-    if (direction === 'up') {
-      const prevSibling = container.previousElementSibling;
-      if (prevSibling) {
-        parent.insertBefore(container, prevSibling);
-        console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
+    // Get all Rise blocks (including our interactions) in the parent container
+    const allBlocks = Array.from(parent.children).filter(child => {
+      return child.classList.contains('compare-contrast-container') || 
+             child.classList.contains('block') ||
+             child.classList.contains('sparkle-fountain') ||
+             child.querySelector('.block') ||
+             child.querySelector('[class*="block"]');
+    });
+    
+    const currentIndex = allBlocks.indexOf(container);
+    
+    if (direction === 'up' && currentIndex > 0) {
+      // Move before the previous block
+      const targetBlock = allBlocks[currentIndex - 1];
+      parent.insertBefore(container, targetBlock);
+      console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
+    } else if (direction === 'down' && currentIndex < allBlocks.length - 1) {
+      // Move after the next block
+      const targetBlock = allBlocks[currentIndex + 1];
+      if (targetBlock.nextElementSibling) {
+        parent.insertBefore(container, targetBlock.nextElementSibling);
       } else {
-        console.log(`[Rise Extension] Cannot move interaction ${interactionId} up - already at top`);
+        parent.appendChild(container);
       }
-    } else if (direction === 'down') {
-      const nextSibling = container.nextElementSibling;
-      if (nextSibling) {
-        parent.insertBefore(nextSibling, container);
-        console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
-      } else {
-        console.log(`[Rise Extension] Cannot move interaction ${interactionId} down - already at bottom`);
-      }
+      console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
+    } else {
+      console.log(`[Rise Extension] Cannot move interaction ${interactionId} ${direction} - already at ${direction === 'up' ? 'top' : 'bottom'}`);
     }
     
     // Re-attach event listeners after DOM manipulation
-    addInteractionControls();
+    setTimeout(() => addInteractionControls(), 100);
   }
 
   // Function to delete interaction
