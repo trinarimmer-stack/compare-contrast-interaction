@@ -770,18 +770,19 @@
     
     // Find the actual Rise block that contains this interaction (not our container)
     // Look for the parent that has sparkle-fountain class (actual Rise blocks)
+    // Start from container's parent, not the container itself
     let riseBlock = container.parentElement;
-    while (riseBlock && !riseBlock.classList.contains('sparkle-fountain')) {
-      riseBlock = riseBlock.parentElement;
-      if (riseBlock === document.body) {
-        riseBlock = null;
+    while (riseBlock && riseBlock !== document.body) {
+      console.log(`[Rise Extension] Checking parent:`, riseBlock.className);
+      if (riseBlock.classList.contains('sparkle-fountain')) {
         break;
       }
+      riseBlock = riseBlock.parentElement;
     }
     
-    if (!riseBlock) {
+    if (!riseBlock || !riseBlock.classList.contains('sparkle-fountain')) {
       console.log(`[Rise Extension] Could not find containing sparkle-fountain Rise block`);
-      console.log(`[Rise Extension] Container parent chain:`, container.parentElement?.className, container.parentElement?.parentElement?.className);
+      console.log(`[Rise Extension] Container parent chain:`, container.parentElement?.className, container.parentElement?.parentElement?.className, container.parentElement?.parentElement?.parentElement?.className);
       return;
     }
     
