@@ -728,34 +728,66 @@
     });
   }
 
+  // Helper function to find the active content area
+  function findActiveContentArea() {
+    const possibleTargets = [
+      '.blocks-authoring .lesson-blocks',
+      '.lesson-blocks',
+      '.blocks-authoring [class*="lesson-blocks"]',
+      '.blocks-authoring [class*="blocks-container"]',
+      '.blocks-authoring [class*="content-blocks"]',
+      '.blocks-authoring .blocks',
+      '.lesson-content .blocks',
+      '.lesson-content',
+      '.blocks-content',
+      '.content-blocks',
+      '[data-testid="lesson-content"]',
+      '[data-testid="content-area"]',
+      '.content-area',
+      '.blocks-authoring > div:nth-child(2)',
+      '.blocks-authoring > div:last-child',
+      '.blocks-authoring'
+    ];
+    
+    for (const selector of possibleTargets) {
+      const area = document.querySelector(selector);
+      if (area && area.querySelector('[class*="block"]')) {
+        return area;
+      }
+    }
+    
+    return document.querySelector('.blocks-authoring') || document.body;
+  }
+
   // Function to move interaction up or down
   function moveInteraction(interactionId, direction) {
     const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
-    const parent = container.parentNode;
+    const contentArea = findActiveContentArea();
     
-    // Get all Rise blocks (including our interactions) in the parent container
-    const allBlocks = Array.from(parent.children).filter(child => {
-      return child.classList.contains('compare-contrast-container') || 
-             child.classList.contains('block') ||
-             child.classList.contains('sparkle-fountain') ||
-             child.querySelector('.block') ||
-             child.querySelector('[class*="block"]');
-    });
+    if (!contentArea) {
+      console.log(`[Rise Extension] Could not find content area for movement`);
+      return;
+    }
     
-    const currentIndex = allBlocks.indexOf(container);
+    // Get all direct children of the content area (these are the main blocks)
+    const allChildren = Array.from(contentArea.children);
+    const currentIndex = allChildren.indexOf(container);
+    
+    console.log(`[Rise Extension] Current index: ${currentIndex}, Total children: ${allChildren.length}`);
+    console.log(`[Rise Extension] All children:`, allChildren.map(child => child.className || child.tagName));
     
     if (direction === 'up' && currentIndex > 0) {
-      // Move before the previous block
-      const targetBlock = allBlocks[currentIndex - 1];
-      parent.insertBefore(container, targetBlock);
+      // Move before the previous sibling
+      const targetElement = allChildren[currentIndex - 1];
+      contentArea.insertBefore(container, targetElement);
       console.log(`[Rise Extension] Moved interaction ${interactionId} up`);
-    } else if (direction === 'down' && currentIndex < allBlocks.length - 1) {
-      // Move after the next block
-      const targetBlock = allBlocks[currentIndex + 1];
-      if (targetBlock.nextElementSibling) {
-        parent.insertBefore(container, targetBlock.nextElementSibling);
+    } else if (direction === 'down' && currentIndex < allChildren.length - 1) {
+      // Move after the next sibling
+      const targetElement = allChildren[currentIndex + 1];
+      if (targetElement.nextElementSibling) {
+        contentArea.insertBefore(container, targetElement.nextElementSibling);
       } else {
-        parent.appendChild(container);
+        contentArea.appendChild(container);
       }
       console.log(`[Rise Extension] Moved interaction ${interactionId} down`);
     } else {
