@@ -390,21 +390,63 @@
     window.insertingInteraction = true;
     
     const interactionHtml = `
-      <div class="compare-contrast-interaction" data-interaction-type="compare-contrast">
-        <div class="interaction-container">
-          <div class="interaction-preview">
-            <div class="preview-header">
-              <h3>${title}</h3>
-              <p>This is a preview. The interaction will be fully functional when published.</p>
+      <div class="compare-contrast-interaction" data-interaction-type="compare-contrast" style="
+        background: #f0f8ff;
+        border: 2px solid #0066cc;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        display: block;
+        position: relative;
+        z-index: 1;
+      ">
+        <div class="interaction-container" style="width: 100%;">
+          <div class="interaction-preview" style="
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+          ">
+            <div class="preview-header" style="margin-bottom: 15px;">
+              <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">${title}</h3>
+              <p style="color: #666; margin: 0; font-size: 14px;">This is a preview. The interaction will be fully functional when published.</p>
             </div>
             <div class="preview-content">
-              <p><strong>Prompt:</strong> ${prompt}</p>
-              <textarea placeholder="${placeholder}" disabled></textarea>
-              <button disabled>Compare Responses</button>
+              <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
+              <textarea placeholder="${placeholder}" disabled style="
+                width: 100%;
+                min-height: 80px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                resize: vertical;
+                font-family: inherit;
+                background: #f9f9f9;
+              "></textarea>
+              <button disabled style="
+                margin-top: 10px;
+                padding: 8px 16px;
+                background: #ccc;
+                border: none;
+                border-radius: 4px;
+                cursor: not-allowed;
+              ">Compare Responses</button>
             </div>
           </div>
-          <div class="interaction-config">
-            <button class="config-btn" onclick="window.openConfigModal()">Edit Configuration</button>
+          <div class="interaction-config" style="text-align: center;">
+            <button class="config-btn" onclick="window.openConfigModal()" style="
+              background: #0066cc;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 14px;
+            ">Edit Configuration</button>
           </div>
         </div>
       </div>
@@ -546,6 +588,38 @@
         activeArea.appendChild(interactionElement);
         console.log('[Rise Extension] Appended to active area');
       }
+      
+      // Verify the element is actually in the DOM and visible
+      setTimeout(() => {
+        const insertedElement = document.querySelector('.compare-contrast-interaction[data-interaction-type="compare-contrast"]');
+        if (insertedElement) {
+          console.log('[Rise Extension] SUCCESS: Element verified in DOM!', {
+            element: insertedElement,
+            parent: insertedElement.parentElement,
+            parentClassName: insertedElement.parentElement?.className,
+            isVisible: insertedElement.offsetWidth > 0 && insertedElement.offsetHeight > 0,
+            boundingRect: insertedElement.getBoundingClientRect(),
+            computedDisplay: window.getComputedStyle(insertedElement).display,
+            computedVisibility: window.getComputedStyle(insertedElement).visibility
+          });
+          
+          // Scroll to the element to make sure it's visible
+          insertedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Add a temporary highlight to make it easier to spot
+          insertedElement.style.outline = '3px solid red';
+          setTimeout(() => {
+            insertedElement.style.outline = '';
+          }, 3000);
+        } else {
+          console.log('[Rise Extension] ERROR: Element not found in DOM after insertion!');
+          
+          // Debug: Check if there are any compare-contrast elements at all
+          const allCompareElements = document.querySelectorAll('[class*="compare-contrast"]');
+          console.log('[Rise Extension] Found compare-contrast elements:', allCompareElements);
+        }
+      }, 100);
+      
       console.log('[Rise Extension] Configured interactive component added to page');
       
       // Inject the actual interactive functionality for preview
