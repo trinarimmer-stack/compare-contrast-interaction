@@ -30,8 +30,8 @@
         <div class="compare-contrast-live">
           <div class="interaction-header">
             <div class="header-card">
-              <h1 class="header-title">📝 Interactive Learning Activity</h1>
-              <p class="header-description">Ready to test your knowledge? Complete the prompt below and compare your response with the expert answer.</p>
+              <h1 class="header-title">📝 Compare and Contrast</h1>
+              <p class="header-description">It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the "Compare Responses" button to see how your response measures up to Julie's recommended approach.</p>
               <div class="header-tip">
                 <span>💡 Tip: Take your time to think through your answer before comparing</span>
               </div>
