@@ -393,12 +393,13 @@
     window.compareContrastConfig = { title, prompt, idealResponse: ideal, placeholder };
     
     const configData = JSON.stringify({ title, prompt, idealResponse: ideal, placeholder });
-    const escapedConfigData = configData.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+    // Use base64 encoding to avoid HTML attribute parsing issues
+    const encodedConfigData = btoa(configData);
     
     const interactionHtml = `
       <div class="compare-contrast-interaction" 
            data-interaction-type="compare-contrast" 
-           data-config='${escapedConfigData}'
+           data-config-base64="${encodedConfigData}"
            style="
              background: #f0f8ff;
              border: 2px solid #0066cc;

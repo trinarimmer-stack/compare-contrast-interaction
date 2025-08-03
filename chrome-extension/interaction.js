@@ -149,8 +149,19 @@
       
       let config = {};
       
-      // Try to get configuration from element's data attribute first
-      if (element.dataset.config) {
+      // Try to get configuration from element's base64 data attribute first
+      if (element.dataset.configBase64) {
+        try {
+          const decodedConfig = atob(element.dataset.configBase64);
+          config = JSON.parse(decodedConfig);
+          console.log('[Compare & Contrast] Using base64 element config:', config);
+        } catch (e) {
+          console.log('[Compare & Contrast] Error parsing base64 element config:', e);
+        }
+      }
+      
+      // Fallback: Try to get configuration from element's data attribute
+      if (Object.keys(config).length === 0 && element.dataset.config) {
         try {
           config = JSON.parse(element.dataset.config);
           console.log('[Compare & Contrast] Using element config:', config);
