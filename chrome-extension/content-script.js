@@ -401,6 +401,19 @@
     document.body.appendChild(modal);
   };
 
+  // Edit interaction by ID function
+  function editInteractionById(interactionId) {
+    const interactionContainer = document.querySelector(`#${interactionId}`);
+    if (!interactionContainer) return;
+    
+    // Get current configuration from the interaction
+    const currentConfig = getInteractionConfig(interactionContainer);
+    const modal = createConfigModal(currentConfig);
+    modal.dataset.editingInteraction = 'true';
+    modal.dataset.targetInteraction = interactionId;
+    document.body.appendChild(modal);
+  }
+
   // Helper function to extract current config from interaction
   function getInteractionConfig(interactionElement) {
     try {
@@ -492,85 +505,13 @@
     // Use base64 encoding to avoid HTML attribute parsing issues
     const encodedConfigData = btoa(configData);
     
-    const interactionHtml = `
-      <div class="block block--mounted block--playback-mode-slides compare-contrast-container" 
-           style="position: relative; margin: 20px 0;" 
-           data-block-type="compare-contrast">
-        <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 1000; display: flex; gap: 5px;">
-          <button class="move-up-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Up">↑</button>
-          <button class="move-down-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Down">↓</button>
-          <button class="delete-btn" data-interaction-id="${interactionId}" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Delete">×</button>
-        </div>
-        <div class="block__inner">
-          <div class="compare-contrast-interaction" 
-               id="${interactionId}"
-               data-interaction-type="compare-contrast" 
-               data-config-base64="${encodedConfigData}"
-               style="
-               background: #f0f8ff;
-               border: 2px solid #0066cc;
-               border-radius: 8px;
-               padding: 20px;
-               margin: 20px 0;
-               box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-               width: 100%;
-               max-width: 100%;
-               box-sizing: border-box;
-               display: block;
-               position: relative;
-               z-index: 1;
-             ">
-            <div class="interaction-container" style="width: 100%;">
-              <div class="interaction-preview" style="
-                background: white;
-                border-radius: 6px;
-                padding: 15px;
-                margin-bottom: 10px;
-              ">
-                 <div class="preview-header" style="margin-bottom: 15px;">
-                   <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">📝 Compare & Contrast</h3>
-                   <p style="color: #666; margin: 0; font-size: 14px;">Interactive Learning Activity - Will be fully functional in preview/published mode</p>
-                </div>
-                <div class="preview-content">
-                  <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
-                  <p style="margin: 0 0 10px 0; font-size: 12px; color: #888;"><strong>Expected Response:</strong> ${ideal}</p>
-                  <textarea placeholder="${placeholder}" disabled style="
-                    width: 100%;
-                    min-height: 80px;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    resize: vertical;
-                    font-family: inherit;
-                    background: #f9f9f9;
-                  "></textarea>
-                  <button disabled style="
-                    margin-top: 10px;
-                    padding: 8px 16px;
-                    background: #ccc;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: not-allowed;
-                  ">Compare Responses (Preview Mode)</button>
-                </div>
-              </div>
-              <div class="interaction-config" style="text-align: center;">
-                <button class="config-btn" onclick="window.openConfigModal()" style="
-                  background: #0066cc;
-                  color: white;
-                  border: none;
-                  padding: 8px 16px;
-                  border-radius: 4px;
-                  cursor: pointer;
-                  font-size: 14px;
-                ">Edit Configuration</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
+    // Store configuration in localStorage for persistence across mode switches
+    const storageKey = `rise-interaction-${interactionId}`;
+    localStorage.setItem(storageKey, configData);
+    console.log('[Rise Extension] Stored interaction config in localStorage:', storageKey);
+    
+    const interactionHtml = createInteractionHTML(interactionId, encodedConfigData, prompt, ideal, placeholder);
+    
     // Find the correct content insertion point in Rise 360 with detailed analysis
     console.log('[Rise Extension] Analyzing DOM structure to find lesson content...');
     
@@ -752,6 +693,19 @@
 
   // Function to add event listeners for interaction controls
   function addInteractionControls() {
+    // Edit buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      if (!btn.hasAttribute('data-listener-added')) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const interactionId = btn.getAttribute('data-interaction-id');
+          editInteractionById(interactionId);
+        });
+        btn.setAttribute('data-listener-added', 'true');
+      }
+    });
+
     // Move up buttons
     document.querySelectorAll('.move-up-btn').forEach(btn => {
       if (!btn.hasAttribute('data-listener-added')) {
@@ -913,6 +867,11 @@
     if (confirm('Are you sure you want to delete this interaction?')) {
       const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
       container.remove();
+      
+      // Also remove from localStorage
+      const storageKey = `rise-interaction-${interactionId}`;
+      localStorage.removeItem(storageKey);
+      console.log('[Rise Extension] Removed interaction from localStorage:', storageKey);
     }
   }
 
@@ -1003,6 +962,9 @@
       // Ensure interaction script is loaded
       injectInteractiveScript();
       
+      // Restore interactions from localStorage in preview mode
+      restoreInteractionsFromStorage();
+      
       // Wait for interactions to be available and initialize them
       setTimeout(() => {
         const interactions = document.querySelectorAll('.compare-contrast-interaction');
@@ -1016,8 +978,9 @@
         });
       }, 1000);
     } else {
-      // Only create floating button in editing mode
+      // Only create floating button in editing mode and restore interactions
       createFloatingButton();
+      restoreInteractionsFromStorage();
     }
   }
 
@@ -1053,6 +1016,138 @@
     });
   }
 
+  // Function to restore interactions from localStorage
+  function restoreInteractionsFromStorage() {
+    console.log('[Rise Extension] Restoring interactions from localStorage');
+    
+    // Find all stored interactions
+    const storedInteractions = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('rise-interaction-')) {
+        const configData = localStorage.getItem(key);
+        const interactionId = key.replace('rise-interaction-', '');
+        storedInteractions.push({ id: interactionId, config: JSON.parse(configData) });
+      }
+    }
+    
+    console.log('[Rise Extension] Found stored interactions:', storedInteractions.length);
+    
+    // Check if interactions already exist in DOM to avoid duplicates
+    const existingInteractions = document.querySelectorAll('.compare-contrast-interaction');
+    const existingIds = Array.from(existingInteractions).map(el => el.id);
+    
+    storedInteractions.forEach(({ id, config }) => {
+      if (!existingIds.includes(id)) {
+        console.log('[Rise Extension] Restoring interaction:', id);
+        restoreInteractionToDOM(id, config);
+      }
+    });
+  }
+  
+  // Function to restore a single interaction to the DOM
+  function restoreInteractionToDOM(interactionId, config) {
+    const { activityInstructions, prompt, idealResponse, placeholder } = config;
+    
+    // Find suitable content area for restoration
+    const activeArea = findActiveContentArea();
+    if (!activeArea) {
+      console.log('[Rise Extension] Could not find content area for restoration');
+      return;
+    }
+    
+    const configData = JSON.stringify(config);
+    const encodedConfigData = btoa(configData);
+    
+    const interactionHtml = createInteractionHTML(interactionId, encodedConfigData, prompt, idealResponse, placeholder);
+    
+    // Create a temporary container to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = interactionHtml;
+    const interactionElement = tempDiv.firstElementChild;
+    
+    // Append to content area
+    activeArea.appendChild(interactionElement);
+    
+    // Add event listeners
+    addInteractionControls();
+    
+    console.log('[Rise Extension] Interaction restored to DOM:', interactionId);
+  }
+  
+  // Helper function to create interaction HTML
+  function createInteractionHTML(interactionId, encodedConfigData, prompt, ideal, placeholder) {
+    return `
+      <div class="block block--mounted block--playback-mode-slides compare-contrast-container" 
+           style="position: relative; margin: 20px 0;" 
+           data-block-type="compare-contrast">
+        <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 1000; display: flex; gap: 5px;">
+          <button class="edit-btn" data-interaction-id="${interactionId}" style="background: #28a745; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Edit">✏️</button>
+          <button class="move-up-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Up">↑</button>
+          <button class="move-down-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Down">↓</button>
+          <button class="delete-btn" data-interaction-id="${interactionId}" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Delete">×</button>
+        </div>
+        <div class="block__inner">
+          <div class="compare-contrast-interaction" 
+               id="${interactionId}"
+               data-interaction-type="compare-contrast" 
+               data-config-base64="${encodedConfigData}"
+               style="
+               background: #f0f8ff;
+               border: 2px solid #0066cc;
+               border-radius: 8px;
+               padding: 20px;
+               margin: 20px 0;
+               box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+               width: 100%;
+               max-width: 100%;
+               box-sizing: border-box;
+               display: block;
+               position: relative;
+               z-index: 1;
+             ">
+            <div class="interaction-container" style="width: 100%;">
+              <div class="interaction-preview" style="
+                background: white;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 10px;
+              ">
+                 <div class="preview-header" style="margin-bottom: 15px;">
+                   <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">📝 Compare & Contrast</h3>
+                   <p style="color: #666; margin: 0; font-size: 14px;">Interactive Learning Activity - Will be fully functional in preview/published mode</p>
+                </div>
+                <div class="preview-content">
+                  <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
+                  <p style="margin: 0 0 10px 0; font-size: 12px; color: #888;"><strong>Expected Response:</strong> ${ideal}</p>
+                  <textarea placeholder="${placeholder}" disabled style="
+                    width: 100%;
+                    min-height: 80px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    resize: vertical;
+                    font-family: inherit;
+                    background: #f9f9f9;
+                  "></textarea>
+                  <button disabled style="
+                    margin-top: 10px;
+                    padding: 8px 16px;
+                    background: #ccc;
+                    color: #666;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: not-allowed;
+                  ">Compare Responses (Preview Only)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // Function to update existing interaction
   function updateExistingInteraction(activityInstructions, prompt, ideal, placeholder) {
     console.log('[Rise Extension] Updating existing interaction');
@@ -1064,6 +1159,10 @@
     if (targetInteraction) {
       const configData = JSON.stringify({ activityInstructions, prompt, idealResponse: ideal, placeholder });
       const configBase64 = btoa(configData);
+      
+      // Update localStorage
+      const storageKey = `rise-interaction-${targetInteraction.id}`;
+      localStorage.setItem(storageKey, configData);
       
       // Update the interaction's stored configuration
       targetInteraction.setAttribute('data-config-base64', configBase64);
