@@ -87,6 +87,13 @@
       const checkForRise = () => {
         attempts++;
         
+        // First check if we're in preview mode - if so, resolve quickly
+        if (isPreviewMode()) {
+          console.log(`[Rise Extension] Preview mode detected, resolving immediately (attempt ${attempts})`);
+          resolve(document.body);
+          return;
+        }
+        
         // First check if we're on the right URL (authoring interface)
         const isAuthoringUrl = window.location.href.includes('/authoring/') || 
                               window.location.href.includes('/author/') ||
@@ -231,8 +238,10 @@
         }
         
         // Check if page has loaded enough content
-        if (totalElements < 500) {
-          console.log(`[Rise Extension] Page still loading (${totalElements} elements), waiting...`);
+        // In preview mode, accept lower element count since there's less UI
+        const minElementsRequired = isPreviewMode() ? 200 : 500;
+        if (totalElements < minElementsRequired) {
+          console.log(`[Rise Extension] Page still loading (${totalElements} elements, need ${minElementsRequired}), waiting...`);
           if (attempts < maxAttempts) {
             const delay = attempts < 20 ? 1000 : 500;
             setTimeout(checkForRise, delay);
@@ -241,6 +250,15 @@
         }
 
         let riseInterface = null;
+        
+        // In preview mode, we don't need the authoring interface - just resolve with body
+        if (isPreviewMode()) {
+          console.log('[Rise Extension] Preview mode - using document body as interface');
+          resolve(document.body);
+          return;
+        }
+        
+        // For authoring mode, look for interface elements
         for (const selector of selectors) {
           riseInterface = document.querySelector(selector);
           if (riseInterface) {
