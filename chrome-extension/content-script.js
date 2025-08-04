@@ -608,6 +608,67 @@ class RiseIntegration {
     document.head.appendChild(styleSheet);
   }
 
+  createCustomBlockButton() {
+    const button = document.createElement('div');
+    button.className = 'custom-block-button compare-contrast-block';
+    button.style.cssText = `
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      margin: 4px 0;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+
+    button.innerHTML = `
+      <div style="
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: white;
+        font-size: 18px;
+      ">
+        ⚖️
+      </div>
+      <div>
+        <div style="
+          font-weight: 600;
+          color: #333;
+          font-size: 14px;
+          margin-bottom: 2px;
+        ">Compare & Contrast</div>
+        <div style="
+          color: #666;
+          font-size: 12px;
+        ">Interactive learning activity</div>
+      </div>
+    `;
+
+    // Add hover effects
+    button.addEventListener('mouseenter', () => {
+      button.style.borderColor = '#667eea';
+      button.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.15)';
+      button.style.transform = 'translateY(-1px)';
+    });
+
+    button.addEventListener('mouseleave', () => {
+      button.style.borderColor = '#e0e0e0';
+      button.style.boxShadow = 'none';
+      button.style.transform = 'translateY(0)';
+    });
+
+    return button;
+  }
+
   async injectInteractiveScript() {
     // The interaction functionality is now bundled in this script
     // This method is kept for compatibility but doesn't need to inject external scripts
@@ -1138,7 +1199,7 @@ window.deleteInteraction = (interactionId) => {
 
 // Main initialization function
 async function initializeExtension() {
-  console.log('Initializing Compare & Contrast Extension');
+  console.log('🚀 Compare & Contrast Extension - Rise Block Library Integration');
   
   try {
     // Wait for Rise to load (this should never throw an error now)
@@ -1156,346 +1217,171 @@ async function initializeExtension() {
     
     // Check if we're in authoring mode
     if (riseIntegration.isAuthoringMode()) {
-      console.log('Authoring mode detected');
+      console.log('✅ Authoring mode detected');
       
       // Restore any saved interactions first
       await interactionManager.restoreAllInteractions();
       
-      // Setup smart insertion system (replaces floating button)
-      setupSmartInsertion();
+      // Initialize Rise Block Library integration instead of insertion zones
+      await initializeBlockLibraryIntegration();
     } else {
-      console.log('Preview mode detected - hiding authoring controls');
+      console.log('📖 Preview mode detected - hiding authoring controls');
     }
     
-    console.log('Extension initialized successfully');
+    console.log('✅ Extension initialized successfully');
   } catch (error) {
-    console.error('Error during extension setup:', error);
+    console.error('❌ Error during extension setup:', error);
     // Continue anyway - don't let setup errors prevent basic functionality
   }
 }
 
-// Smart Insertion System
-function setupSmartInsertion() {
-  console.log('Setting up smart insertion system');
+// Rise Block Library Integration
+async function initializeBlockLibraryIntegration() {
+  console.log('🔍 Initializing Rise Block Library integration...');
   
-  // Remove floating button since we're replacing it
-  const existingFab = document.querySelector('.rise-compare-contrast-fab');
-  if (existingFab) {
-    existingFab.remove();
-  }
-  
-  // Create insertion zones between content blocks after a delay
-  setTimeout(createInsertionZones, 500);
-  
-  // Watch for content changes and recreate zones
-  const observer = new MutationObserver(() => {
-    // Debounce to avoid excessive updates
-    clearTimeout(window.insertionZoneTimeout);
-    window.insertionZoneTimeout = setTimeout(createInsertionZones, 500);
+  // Watch for block library to appear
+  const blockLibraryObserver = new MutationObserver(async (mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          await checkAndInjectCustomBlock(node);
+        }
+      }
+    }
   });
+
+  // Start observing
+  blockLibraryObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // Check if block library is already present
+  await checkAndInjectCustomBlock(document.body);
   
-  observer.observe(document.body, {
+  // Also check for add block buttons that might trigger the library
+  setupAddBlockButtonIntegration();
+}
+
+async function checkAndInjectCustomBlock(container) {
+  // Look for Rise block library patterns
+  const blockLibrarySelectors = [
+    '.block-library',
+    '.add-block-menu', 
+    '.block-picker',
+    '[data-testid*="block"]',
+    '.blocks-panel',
+    '.content-blocks',
+    '[class*="BlockLibrary"]',
+    '[class*="block-library"]',
+    '.overlay-panel', // Rise often uses overlay panels
+    '.modal-content' // Block library might be in a modal
+  ];
+
+  for (const selector of blockLibrarySelectors) {
+    const blockLibrary = container.querySelector ? container.querySelector(selector) : 
+                        container.closest ? container.closest(selector) : null;
+    
+    if (blockLibrary && !blockLibrary.querySelector('.compare-contrast-block')) {
+      console.log('📚 Found block library, injecting custom block');
+      await injectCustomBlockIntoLibrary(blockLibrary);
+      break;
+    }
+  }
+}
+
+async function injectCustomBlockIntoLibrary(blockLibrary) {
+  try {
+    // Create our custom block button
+    const customBlock = riseIntegration.createCustomBlockButton();
+    customBlock.classList.add('rise-custom-block');
+    
+    // Add click handler to insert the block directly
+    customBlock.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('🎯 Custom block clicked, inserting interaction');
+      await insertCompareContrastBlock();
+      
+      // Close the block library if it's in a modal/overlay
+      const modal = blockLibrary.closest('.modal, .overlay, [role="dialog"]');
+      if (modal) {
+        const closeButton = modal.querySelector('[aria-label="Close"], .close, .cancel');
+        if (closeButton) closeButton.click();
+      }
+    });
+
+    // Find the best insertion point in the block library
+    const insertionPoint = findBlockLibraryInsertionPoint(blockLibrary);
+    
+    if (insertionPoint) {
+      insertionPoint.appendChild(customBlock);
+      console.log('✅ Custom block added to Rise Block Library');
+    } else {
+      // Fallback: append to the block library container
+      blockLibrary.appendChild(customBlock);
+      console.log('✅ Custom block added to Rise Block Library (fallback)');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error injecting custom block into library:', error);
+  }
+}
+
+function findBlockLibraryInsertionPoint(blockLibrary) {
+  // Look for common block library structures
+  const possibleContainers = [
+    blockLibrary.querySelector('.block-list'),
+    blockLibrary.querySelector('.blocks-container'),
+    blockLibrary.querySelector('.content-blocks'),
+    blockLibrary.querySelector('[role="list"]'),
+    blockLibrary.querySelector('ul'),
+    blockLibrary.querySelector('.blocks'),
+    blockLibrary.querySelector('.grid'), // Rise often uses grid layouts
+    blockLibrary.querySelector('[class*="grid"]')
+  ];
+
+  // Return the first valid container
+  for (const container of possibleContainers) {
+    if (container) {
+      return container;
+    }
+  }
+
+  // If no specific container found, use the block library itself
+  return blockLibrary;
+}
+
+function setupAddBlockButtonIntegration() {
+  // Watch for "Add Block" buttons that might open the block library
+  const addBlockObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // Look for add block buttons
+          const addButtons = node.querySelectorAll ? 
+            node.querySelectorAll('[class*="add"], [class*="plus"], [aria-label*="Add"]') : 
+            [];
+          
+          addButtons.forEach(button => {
+            if (button.textContent.toLowerCase().includes('block') || 
+                button.getAttribute('aria-label')?.toLowerCase().includes('block')) {
+              console.log('🔘 Found add block button, will watch for library');
+            }
+          });
+        }
+      });
+    });
+  });
+
+  addBlockObserver.observe(document.body, {
     childList: true,
     subtree: true
   });
 }
 
-function createInsertionZones() {
-  // Remove any existing zones
-  document.querySelectorAll('.insertion-zone').forEach(zone => zone.remove());
-  
-  // Find content blocks to create zones between them
-  const contentBlocks = findContentBlocks();
-  console.log('Creating insertion zones for', contentBlocks.length, 'blocks');
-  
-  if (contentBlocks.length === 0) {
-    console.log('No content blocks found - creating fallback insertion system');
-    // If no blocks found, create a simple floating add button
-    createFloatingAddButton();
-    return;
-  }
-  
-  // Create zones after each block
-  contentBlocks.forEach((block, index) => {
-    createInsertionZone(block, 'after');
-    if (index === 0) {
-      // Also create one before the first block
-      createInsertionZone(block, 'before');
-    }
-  });
-  
-  console.log('Created', document.querySelectorAll('.insertion-zone').length, 'insertion zones');
-}
-
-function findContentBlocks() {
-  // Broader selectors that should work in most Rise environments
-  const selectors = [
-    '.block:not(.compare-contrast-container)',
-    '[class*="block"]:not(.compare-contrast-container)',
-    '[data-block-type]:not([data-block-type="compare-contrast"])',
-    'main > *:not(.insertion-zone):not(.compare-contrast-container)',
-    '.lesson-content > *:not(.insertion-zone):not(.compare-contrast-container)',
-    '.content-area > *:not(.insertion-zone):not(.compare-contrast-container)'
-  ];
-  
-  const blocks = new Set();
-  
-  selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(element => {
-      // Filter out obviously non-content elements
-      if (isContentBlock(element)) {
-        blocks.add(element);
-      }
-    });
-  });
-  
-  console.log('Found blocks:', blocks.size);
-  
-  return Array.from(blocks).sort((a, b) => {
-    const position = a.compareDocumentPosition(b);
-    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
-  });
-}
-
-function createFloatingAddButton() {
-  // Remove any existing floating button
-  const existing = document.querySelector('.rise-compare-contrast-fab');
-  if (existing) existing.remove();
-  
-  const fab = document.createElement('div');
-  fab.className = 'rise-compare-contrast-fab';
-  fab.innerHTML = '+';
-  fab.style.cssText = `
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background: #007cff;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 124, 255, 0.3);
-    z-index: 10000;
-    transition: all 0.2s ease;
-  `;
-  
-  fab.addEventListener('click', () => {
-    insertBlockAtZone(null);
-  });
-  
-  fab.addEventListener('mouseenter', () => {
-    fab.style.transform = 'scale(1.1)';
-  });
-  
-  fab.addEventListener('mouseleave', () => {
-    fab.style.transform = 'scale(1)';
-  });
-  
-  document.body.appendChild(fab);
-  console.log('Created fallback floating add button');
-}
-
-function isContentBlock(element) {
-  // Skip elements that are clearly not content blocks
-  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE'];
-  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup'];
-  
-  if (skipTags.includes(element.tagName)) return false;
-  
-  // Safely check className - handle cases where it might not be a string
-  const className = element.className;
-  const classNameStr = className ? (typeof className === 'string' ? className : className.toString()) : '';
-  if (skipClasses.some(cls => classNameStr.includes(cls))) return false;
-  
-  if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
-  
-  return true;
-}
-
-function createInsertionZone(referenceBlock, position) {
-  const zone = document.createElement('div');
-  zone.className = 'insertion-zone';
-  zone.style.cssText = `
-    height: 4px;
-    margin: 10px 0;
-    background: transparent;
-    border: 2px dashed transparent;
-    border-radius: 4px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    opacity: 0;
-  `;
-  
-  // Store insertion location data on the zone
-  zone.dataset.referenceBlockId = referenceBlock.id || `block-${Date.now()}`;
-  zone.dataset.insertPosition = position;
-  
-  // Ensure reference block has an ID for later reference
-  if (!referenceBlock.id) {
-    referenceBlock.id = zone.dataset.referenceBlockId;
-  }
-  
-  // Add hover effect
-  zone.addEventListener('mouseenter', () => {
-    zone.style.background = 'rgba(102, 126, 234, 0.1)';
-    zone.style.borderColor = '#667eea';
-    zone.style.opacity = '1';
-    zone.style.height = '8px';
-    
-    // Show insertion indicator
-    showInsertionIndicator(zone);
-  });
-  
-  zone.addEventListener('mouseleave', () => {
-    zone.style.background = 'transparent';
-    zone.style.borderColor = 'transparent';
-    zone.style.opacity = '0';
-    zone.style.height = '4px';
-    
-    // Hide insertion indicator
-    hideInsertionIndicator(zone);
-  });
-  
-  // Add click handler to insert block
-  zone.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    showInsertionMenu(zone, e.clientX, e.clientY);
-  });
-  
-  // Insert the zone
-  if (position === 'before') {
-    referenceBlock.parentNode.insertBefore(zone, referenceBlock);
-  } else {
-    referenceBlock.parentNode.insertBefore(zone, referenceBlock.nextSibling);
-  }
-}
-
-function showInsertionIndicator(zone) {
-  // Remove any existing indicator
-  const existingIndicator = zone.querySelector('.insertion-indicator');
-  if (existingIndicator) return;
-  
-  const indicator = document.createElement('div');
-  indicator.className = 'insertion-indicator';
-  indicator.style.cssText = `
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: #667eea;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    z-index: 1000;
-    pointer-events: none;
-  `;
-  indicator.textContent = '+ Add Compare & Contrast Block';
-  
-  zone.appendChild(indicator);
-}
-
-function hideInsertionIndicator(zone) {
-  const indicator = zone.querySelector('.insertion-indicator');
-  if (indicator) {
-    indicator.remove();
-  }
-}
-
-function showInsertionMenu(zone, x, y) {
-  // Remove any existing menu
-  document.querySelectorAll('.insertion-menu').forEach(menu => menu.remove());
-  
-  const menu = document.createElement('div');
-  menu.className = 'insertion-menu';
-  menu.style.cssText = `
-    position: fixed;
-    left: ${x}px;
-    top: ${y}px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    z-index: 999999;
-    min-width: 200px;
-    transform: translateY(-50%);
-    border: 1px solid #e1e5e9;
-  `;
-  
-  const button = document.createElement('button');
-  button.style.cssText = `
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    background: white;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-  `;
-  
-  button.innerHTML = `
-    <div style="
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 16px;
-    ">⚖️</div>
-    <div>
-      <div style="font-weight: 500; color: #333;">Compare & Contrast</div>
-      <div style="font-size: 12px; color: #666;">Interactive learning activity</div>
-    </div>
-  `;
-  
-  button.addEventListener('mouseenter', () => {
-    button.style.backgroundColor = '#f8f9fa';
-  });
-  
-  button.addEventListener('mouseleave', () => {
-    button.style.backgroundColor = 'white';
-  });
-  
-  button.addEventListener('click', () => {
-    menu.remove();
-    insertBlockAtZone(zone);
-  });
-  
-  menu.appendChild(button);
-  document.body.appendChild(menu);
-  
-  // Close menu when clicking outside
-  const closeMenu = (e) => {
-    if (!menu.contains(e.target)) {
-      menu.remove();
-      document.removeEventListener('click', closeMenu);
-    }
-  };
-  
-  setTimeout(() => {
-    document.addEventListener('click', closeMenu);
-  }, 100);
-}
-
-async function insertBlockAtZone(zone) {
+async function insertCompareContrastBlock() {
   try {
     // Get default configuration
     const defaultConfig = {
@@ -1519,45 +1405,56 @@ async function insertBlockAtZone(zone) {
       interactionManager.addInteractionControls(interactionElement, interactionId);
     }
     
-    // Find the reference block and insert the interaction
-    const referenceBlockId = zone.dataset.referenceBlockId;
-    const insertPosition = zone.dataset.insertPosition;
-    const referenceBlock = document.getElementById(referenceBlockId);
+    // Find the best insertion point in the lesson content
+    const insertionPoint = await findLessonContentInsertionPoint();
     
-    if (referenceBlock && referenceBlock.parentNode) {
-      // Remove the zone first
-      if (zone.parentNode) {
-        zone.parentNode.removeChild(zone);
-      }
-      
-      // Insert the interaction at the correct position
-      if (insertPosition === 'before') {
-        referenceBlock.parentNode.insertBefore(interactionElement, referenceBlock);
-      } else {
-        referenceBlock.parentNode.insertBefore(interactionElement, referenceBlock.nextSibling);
-      }
+    if (insertionPoint) {
+      insertionPoint.appendChild(interactionElement);
+      console.log('✅ Compare & Contrast block inserted into lesson content');
     } else {
-      console.warn('Reference block not found, appending to document body');
-      // Remove zone if it still exists
-      if (zone && zone.parentNode) {
-        zone.parentNode.removeChild(zone);
-      }
+      console.warn('⚠️ No suitable insertion point found, appending to body');
       document.body.appendChild(interactionElement);
     }
     
     // Initialize interaction functionality
     interactionManager.initializeInteraction(interactionElement);
     
-    // Recreate insertion zones
-    setTimeout(createInsertionZones, 100);
-    
     uiManager.showToast('Compare & Contrast block added!', 'success');
     
   } catch (error) {
-    console.error('Error inserting block at zone:', error);
+    console.error('❌ Error inserting Compare & Contrast block:', error);
     uiManager.showToast('Error adding block', 'error');
   }
 }
+
+async function findLessonContentInsertionPoint() {
+  // Look for the main lesson content area where blocks should be inserted
+  const selectors = [
+    '.lesson-content',
+    '.lesson-body', 
+    '.content-area',
+    '.main-content',
+    '[data-testid="lesson-content"]',
+    '[class*="lesson"][class*="content"]',
+    'main'
+  ];
+
+  for (const selector of selectors) {
+    const contentArea = document.querySelector(selector);
+    if (contentArea) {
+      console.log('📝 Found lesson content area:', selector);
+      return contentArea;
+    }
+  }
+
+  return null;
+}
+
+// Legacy insertion zone functions removed - now using Block Library integration
+
+// Old insertion zone functions removed - replaced with Block Library integration
+
+// All legacy insertion zone functions removed - replaced with Block Library integration
 
 // Navigation change handler
 function handleNavigationChange() {
