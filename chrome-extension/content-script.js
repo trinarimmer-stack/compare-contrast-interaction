@@ -72,7 +72,7 @@ class StorageManager {
       }
       
       // Also save to localStorage as backup
-      const interactions = this.getLocalInteractions();
+      const interactions = StorageManager.getLocalInteractions();
       interactions[interactionId] = {
         id: interactionId,
         config: config,
@@ -97,12 +97,12 @@ class StorageManager {
       }
       
       // Fallback to localStorage
-      const interactions = this.getLocalInteractions();
+      const interactions = StorageManager.getLocalInteractions();
       return interactions[interactionId] || null;
     } catch (error) {
       console.error('Error getting interaction:', error);
       // Fallback to localStorage
-      const interactions = this.getLocalInteractions();
+      const interactions = StorageManager.getLocalInteractions();
       return interactions[interactionId] || null;
     }
   }
@@ -115,7 +115,7 @@ class StorageManager {
       }
       
       // Remove from localStorage
-      const interactions = this.getLocalInteractions();
+      const interactions = StorageManager.getLocalInteractions();
       delete interactions[interactionId];
       localStorage.setItem('rise_interactions', JSON.stringify(interactions));
       
@@ -126,7 +126,7 @@ class StorageManager {
   }
 
   static getAllInteractions() {
-    return this.getLocalInteractions();
+    return StorageManager.getLocalInteractions();
   }
 
   static getLocalInteractions() {
@@ -158,7 +158,7 @@ class StorageManager {
     } catch (error) {
       console.error('Error syncing from Chrome storage:', error);
     }
-    return this.getLocalInteractions();
+    return StorageManager.getLocalInteractions();
   }
 }
 
@@ -351,28 +351,19 @@ class UIManager {
   }
 
   createInteractionHTML(interactionId, config) {
-    const container = document.createElement('div');
-    container.className = 'compare-contrast-interaction';
-    container.setAttribute('data-interaction-id', interactionId);
-    container.setAttribute('data-title', config.title || 'Compare & Contrast');
-    container.setAttribute('data-prompt', config.prompt || '');
-    container.setAttribute('data-ideal-response', config.idealResponse || '');
-    container.setAttribute('data-placeholder', config.placeholder || 'Type your response here...');
-    
-    container.innerHTML = `
-        <div class="interaction-content">
-          <h3>${config.title || 'Compare & Contrast'}</h3>
-          <p>${config.prompt || ''}</p>
-          <textarea placeholder="${config.placeholder || 'Type your response here...'}"></textarea>
-          <div class="ideal-response" style="display: none;">
-            <h4>Ideal Response:</h4>
-            <p>${config.idealResponse || ''}</p>
-          </div>
-          <button class="show-ideal-btn">Show Ideal Response</button>
+    return `
+      <div class="block block--mounted block--playbook-mode-slides compare-contrast-container" 
+           style="position: relative; margin: 20px 0; padding: 20px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa;" 
+           data-block-type="compare-contrast"
+           data-interaction-id="${interactionId}">
+        <div data-compare-contrast-interaction
+             data-title="${config.title || 'Compare & Contrast'}"
+             data-prompt="${config.prompt || ''}"
+             data-ideal-response="${config.idealResponse || ''}"
+             data-placeholder="${config.placeholder || 'Type your response here...'}">
         </div>
+      </div>
     `;
-    
-    return container;
   }
 
   showToast(message, type = 'info') {
@@ -651,7 +642,6 @@ class RiseIntegration {
 // ========= INTERACTION MANAGER MODULE =========
 class InteractionManager {
   constructor() {
-    this.storageManager = StorageManager;
     this.uiManager = new UIManager();
     this.currentEditingId = null;
     this.eventHandlers = new Map();
@@ -659,18 +649,18 @@ class InteractionManager {
 
   async saveConfiguration(config, interactionId = null) {
     const id = interactionId || this.generateInteractionId();
-    await this.storageManager.saveInteraction(id, config);
+    await StorageManager.saveInteraction(id, config);
     return id;
   }
 
   async loadConfiguration(interactionId) {
-    const data = await this.storageManager.getInteraction(interactionId);
+    const data = await StorageManager.getInteraction(interactionId);
     return data ? data.config : null;
   }
 
   async deleteInteraction(interactionId) {
     // Remove from storage
-    await this.storageManager.deleteInteraction(interactionId);
+    await StorageManager.deleteInteraction(interactionId);
     
     // Remove from DOM
     const element = document.querySelector(`[data-interaction-id="${interactionId}"]`);
@@ -721,10 +711,15 @@ class InteractionManager {
         throw new Error('Could not find suitable insertion point');
       }
 
-      const interactionElement = this.uiManager.createInteractionHTML(interactionId, config);
+      const interactionHTML = this.uiManager.createInteractionHTML(interactionId, config);
+      
+      // Create container and insert
+      const container = document.createElement('div');
+      container.innerHTML = interactionHTML;
+      const interactionElement = container.firstElementChild;
       
       if (!interactionElement) {
-        throw new Error('Failed to create interaction element');
+        throw new Error('Failed to create interaction element from HTML');
       }
       
       // Add controls for authoring mode
@@ -987,7 +982,7 @@ class InteractionManager {
 
   async restoreAllInteractions() {
     try {
-      const interactions = this.storageManager.getAllInteractions();
+      const interactions = StorageManager.getAllInteractions();
       
       for (const [interactionId, data] of Object.entries(interactions)) {
         if (data && data.config) {
@@ -1013,7 +1008,11 @@ class InteractionManager {
     // Find insertion point and create interaction
     const insertionPoint = this.findInsertionPoint();
     if (insertionPoint) {
-      const interactionElement = this.uiManager.createInteractionHTML(interactionId, config);
+      const interactionHTML = this.uiManager.createInteractionHTML(interactionId, config);
+      
+      const container = document.createElement('div');
+      container.innerHTML = interactionHTML;
+      const interactionElement = container.firstElementChild;
       
       // Add controls for authoring mode
       const riseIntegration = new RiseIntegration();
