@@ -802,15 +802,36 @@ class InteractionManager {
 
   moveInteraction(interactionId, direction) {
     const element = document.querySelector(`[data-interaction-id="${interactionId}"]`);
-    if (!element) return;
+    if (!element) {
+      this.uiManager.showToast('Interaction element not found', 'error');
+      return;
+    }
     
-    const sibling = direction === 'up' ? element.previousElementSibling : element.nextElementSibling;
-    if (!sibling) return;
+    const parent = element.parentNode;
+    const allSiblings = Array.from(parent.children);
+    const currentIndex = allSiblings.indexOf(element);
     
+    let targetIndex;
     if (direction === 'up') {
-      element.parentNode.insertBefore(element, sibling);
+      targetIndex = Math.max(0, currentIndex - 1);
     } else {
-      element.parentNode.insertBefore(sibling, element);
+      targetIndex = Math.min(allSiblings.length - 1, currentIndex + 1);
+    }
+    
+    // Only move if the target position is different from current
+    if (targetIndex === currentIndex) {
+      this.uiManager.showToast(`Cannot move ${direction} - already at the ${direction === 'up' ? 'top' : 'bottom'}`, 'warning');
+      return;
+    }
+    
+    // Remove element from current position
+    element.remove();
+    
+    // Insert at new position
+    if (targetIndex >= allSiblings.length - 1) {
+      parent.appendChild(element);
+    } else {
+      parent.insertBefore(element, allSiblings[targetIndex + (direction === 'up' ? 0 : 1)]);
     }
     
     this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
