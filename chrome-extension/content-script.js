@@ -614,31 +614,52 @@
       })));
     }
 
-    // Create a container and insert the interaction
+    // Create a proper Rise block structure
+    const riseBlockContainer = document.createElement('div');
+    riseBlockContainer.className = 'sparkle-fountain block block--mounted block--playback-mode-slides block--unlinked';
+    riseBlockContainer.setAttribute('data-block-id', `interaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+    
+    const blockAnimationWrapper = document.createElement('div');
+    blockAnimationWrapper.className = 'block__animation-wrapper';
+    
+    const blockWrap = document.createElement('div');
+    blockWrap.className = 'block__wrap block__wrap--playback-mode-slides';
+    
+    const blockContent = document.createElement('div');
+    blockContent.className = 'block__content';
+    
+    const blockWrapper = document.createElement('div');
+    blockWrapper.className = 'block-wrapper bg bg--range-light bg--type-light';
+    
+    const blockInner = document.createElement('div');
+    blockInner.className = 'block__inner';
+    
+    // Create the interaction container and add our interaction
     const container = document.createElement('div');
     container.innerHTML = interactionHtml;
     const interactionElement = container.firstElementChild;
-    console.log('[Rise Extension] Container created with configured HTML');
+    blockInner.appendChild(interactionElement);
+    
+    // Build the proper Rise block hierarchy
+    blockWrapper.appendChild(blockInner);
+    blockContent.appendChild(blockWrapper);
+    blockWrap.appendChild(blockContent);
+    blockAnimationWrapper.appendChild(blockWrap);
+    riseBlockContainer.appendChild(blockAnimationWrapper);
+    
+    console.log('[Rise Extension] Created proper Rise block structure');
     
     try {
-      // Strategy 1: Try to insert after the last existing block
-      if (existingBlocks.length > 0) {
-        const lastBlock = existingBlocks[existingBlocks.length - 1];
-        console.log('[Rise Extension] Attempting to insert after last block:', lastBlock.className);
-        lastBlock.parentElement.insertBefore(interactionElement, lastBlock.nextSibling);
-        console.log('[Rise Extension] Inserted after existing block');
-      } 
-      // Strategy 2: Try to insert at an insertion point
-      else if (insertionPoints.length > 0) {
-        const insertionPoint = insertionPoints[0];
-        console.log('[Rise Extension] Attempting to insert at insertion point:', insertionPoint.className);
-        insertionPoint.parentElement.insertBefore(interactionElement, insertionPoint.nextSibling);
-        console.log('[Rise Extension] Inserted at insertion point');
-      }
-      // Strategy 3: Append to the active area as fallback
-      else {
-        console.log('[Rise Extension] No blocks or insertion points found, appending to active area');
-        activeArea.appendChild(interactionElement);
+      // Strategy 1: Try to insert after the last existing sparkle-fountain block
+      const existingSparkleBlocks = activeArea.querySelectorAll('.sparkle-fountain.block');
+      if (existingSparkleBlocks.length > 0) {
+        const lastSparkleBlock = existingSparkleBlocks[existingSparkleBlocks.length - 1];
+        console.log('[Rise Extension] Attempting to insert after last sparkle-fountain block');
+        activeArea.insertBefore(riseBlockContainer, lastSparkleBlock.nextSibling);
+        console.log('[Rise Extension] Inserted after existing sparkle-fountain block');
+      } else {
+        console.log('[Rise Extension] No sparkle-fountain blocks found, appending to active area');
+        activeArea.appendChild(riseBlockContainer);
         console.log('[Rise Extension] Appended to active area');
       }
       
