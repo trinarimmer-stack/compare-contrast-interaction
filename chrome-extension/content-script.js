@@ -527,9 +527,9 @@
                 padding: 15px;
                 margin-bottom: 10px;
               ">
-                <div class="preview-header" style="margin-bottom: 15px;">
-                  <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">${title}</h3>
-                  <p style="color: #666; margin: 0; font-size: 14px;">📝 Interactive Learning Activity - Will be fully functional in preview/published mode</p>
+                 <div class="preview-header" style="margin-bottom: 15px;">
+                   <h3 style="color: #0066cc; margin: 0 0 5px 0; font-size: 18px;">📝 Compare & Contrast</h3>
+                   <p style="color: #666; margin: 0; font-size: 14px;">Interactive Learning Activity - Will be fully functional in preview/published mode</p>
                 </div>
                 <div class="preview-content">
                   <p style="margin: 0 0 10px 0; font-weight: bold;"><strong>Prompt:</strong> ${prompt}</p>
