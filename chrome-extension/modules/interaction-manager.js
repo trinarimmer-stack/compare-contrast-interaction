@@ -85,29 +85,16 @@ export class InteractionManager {
         return false;
       }
 
-      // Find insertion point
-      const insertionPoint = targetElement || await this.findInsertionPoint();
+      // Find lesson container directly and append to it
+      const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
       
-      if (!insertionPoint) {
-        console.warn('❌ No suitable insertion point found - creating a fallback container');
-        // Create a fallback container in lesson content if we can't find blocks
-        const lessonContent = document.querySelector('[data-testid="lesson-content"], .lesson-content, .content-area');
-        if (lessonContent) {
-          const fallbackContainer = document.createElement('div');
-          fallbackContainer.className = 'rise-custom-content-container';
-          lessonContent.appendChild(fallbackContainer);
-          DOMUtils.insertAfter(blockElement, fallbackContainer);
-        } else {
-          this.uiManager.showToast('Cannot find lesson content area', 'error');
-          return false;
-        }
+      if (lessonContainer) {
+        console.log('✅ Appending interaction to lesson container:', lessonContainer);
+        lessonContainer.appendChild(blockElement);
       } else {
-        // Insert after the target element
-        const inserted = DOMUtils.insertAfter(blockElement, insertionPoint);
-        if (!inserted) {
-          this.uiManager.showToast('Failed to insert interaction block', 'error');
-          return false;
-        }
+        console.warn('❌ No Rise lesson container found - using fallback');
+        this.uiManager.showToast('Cannot find lesson content area', 'error');
+        return false;
       }
 
       // Add controls and initialize
