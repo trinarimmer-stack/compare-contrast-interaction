@@ -1269,8 +1269,8 @@ function isContentBlock(element) {
   if (skipTags.includes(element.tagName)) return false;
   
   // Safely check className - handle cases where it might not be a string
-  const className = element.className || '';
-  const classNameStr = typeof className === 'string' ? className : className.toString();
+  const className = element.className;
+  const classNameStr = className ? (typeof className === 'string' ? className : className.toString()) : '';
   if (skipClasses.some(cls => classNameStr.includes(cls))) return false;
   
   if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
