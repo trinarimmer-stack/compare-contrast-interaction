@@ -1419,10 +1419,10 @@
       return;
     }
     
-    // Look for lesson content area within the active area to avoid course header - must match save logic
+    // Always look for lesson content area to avoid course header in both Edit and Preview modes
     const lessonContent = activeArea.querySelector('[class*="lesson-body"], [class*="blocks"], [class*="sparkle"]') || activeArea;
     
-    console.log('[Rise Extension] Restoring interaction to area:', activeArea.className);
+    console.log('[Rise Extension] Restoring interaction to lesson content in:', lessonContent.className || 'unnamed container');
     
     const configData = JSON.stringify(config);
     const encodedConfigData = btoa(configData);
