@@ -987,8 +987,39 @@
     setTimeout(() => {
       addInteractionControls();
       console.log('[Rise Extension] Re-attached interaction controls after movement');
+      
+      // Save the new position
+      saveInteractionPosition(interactionId);
+      
       window.movementInProgress = false;
     }, 200);
+  }
+
+  
+  // Function to save interaction position in localStorage
+  function saveInteractionPosition(interactionId) {
+    const riseBlock = document.getElementById(interactionId)?.closest('.sparkle-fountain');
+    if (!riseBlock) return;
+    
+    const contentArea = riseBlock.closest('.lesson-content, .content-area, [class*="content"]');
+    if (!contentArea) return;
+    
+    const allBlocks = Array.from(contentArea.children).filter(child => 
+      child.classList.contains('sparkle-fountain') || child.classList.contains('block')
+    );
+    
+    const currentIndex = allBlocks.indexOf(riseBlock);
+    if (currentIndex !== -1) {
+      // Update the config in localStorage with position
+      const storageKey = `rise-interaction-${interactionId}`;
+      const existingConfig = localStorage.getItem(storageKey);
+      if (existingConfig) {
+        const config = JSON.parse(existingConfig);
+        config.blockPosition = currentIndex;
+        localStorage.setItem(storageKey, JSON.stringify(config));
+        console.log(`[Rise Extension] Saved position ${currentIndex} for interaction ${interactionId}`);
+      }
+    }
   }
 
   // Function to delete interaction
@@ -1406,15 +1437,24 @@
     blockAnimationWrapper.appendChild(blockWrap);
     riseBlockContainer.appendChild(blockAnimationWrapper);
     
-    // Insert the complete block structure
-    const existingSparkleBlocks = activeArea.querySelectorAll('.sparkle-fountain.block');
-    if (existingSparkleBlocks.length > 0) {
-      const lastSparkleBlock = existingSparkleBlocks[existingSparkleBlocks.length - 1];
-      activeArea.insertBefore(riseBlockContainer, lastSparkleBlock.nextSibling);
-      console.log('[Rise Extension] Restored interaction inserted after existing sparkle-fountain block');
-    } else {
+    // Insert the complete block structure at the saved position
+    const savedPosition = config.blockPosition || 'bottom';
+    const allBlocks = activeArea.querySelectorAll('.sparkle-fountain.block, .block');
+    
+    if (savedPosition === 'bottom' || savedPosition >= allBlocks.length) {
+      // Insert at the end
       activeArea.appendChild(riseBlockContainer);
       console.log('[Rise Extension] Restored interaction appended to content area');
+    } else {
+      // Insert at the specific position
+      const targetIndex = Math.max(0, parseInt(savedPosition));
+      if (allBlocks[targetIndex]) {
+        activeArea.insertBefore(riseBlockContainer, allBlocks[targetIndex]);
+        console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex}`);
+      } else {
+        activeArea.appendChild(riseBlockContainer);
+        console.log('[Rise Extension] Position not found, appended to content area');
+      }
     }
     
     // Add event listeners for controls in editing mode
