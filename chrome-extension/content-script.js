@@ -1,5 +1,6 @@
-// Rise Compare & Contrast Extension - Content Script
+// Rise Compare & Contrast Extension - Content Script v2.1
 // All modules bundled for Chrome extension compatibility
+console.log('Content script version 2.1 loaded - no error throwing waitForRise');
 
 // ========= DOM UTILS MODULE =========
 class DOMUtils {
@@ -445,10 +446,12 @@ class RiseIntegration {
   }
 
   async waitForRise(timeout = 5000) {
+    console.log('waitForRise called - should never throw error');
     return new Promise((resolve) => {
       const startTime = Date.now();
       
       const checkForRise = () => {
+        console.log('checkForRise iteration - elapsed:', Date.now() - startTime);
         // Always resolve, never reject
         if (this.checkForRiseElements() || document.readyState === 'complete' || (Date.now() - startTime > timeout)) {
           console.log('Rise detection completed:', this.checkForRiseElements() ? 'elements found' : 'timeout reached, continuing anyway');
