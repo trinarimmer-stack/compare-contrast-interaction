@@ -732,9 +732,14 @@
 
   // Function to add event listeners for interaction controls
   function addInteractionControls() {
+    console.log('[Rise Extension] addInteractionControls called');
+    const interactions = document.querySelectorAll('.compare-contrast-interaction');
+    console.log(`[Rise Extension] Found ${interactions.length} interactions to add controls to`);
+    
     // Edit buttons
     document.querySelectorAll('.edit-btn').forEach(btn => {
       if (!btn.hasAttribute('data-listener-added')) {
+        console.log('[Rise Extension] Adding edit button listener');
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -938,6 +943,9 @@
 
     // Create floating button only in editing mode
     const createFloatingButton = () => {
+      console.log('[Rise Extension] createFloatingButton called');
+      console.log('[Rise Extension] isPreviewMode():', isPreviewMode());
+      
       // Don't show floating button in preview mode
       if (isPreviewMode()) {
         console.log('[Rise Extension] Preview mode detected - hiding floating button');
@@ -1052,8 +1060,15 @@
       }, 5000);
     } else {
       // Only create floating button in editing mode and restore interactions
+      console.log('[Rise Extension] In edit mode - creating floating button and restoring interactions');
       createFloatingButton();
       restoreInteractionsFromStorage();
+      
+      // Ensure all existing interactions have controls
+      setTimeout(() => {
+        console.log('[Rise Extension] Adding controls to all existing interactions');
+        addInteractionControls();
+      }, 3000);
     }
   }
 
@@ -1135,6 +1150,11 @@
           restoreInteractionToDOM(id, config);
         } else {
           console.log('[Rise Extension] Interaction already exists, skipping:', id);
+          // Add controls to existing interactions that might be missing them
+          setTimeout(() => {
+            addInteractionControls();
+            console.log('[Rise Extension] Added missing controls to existing interaction:', id);
+          }, 100);
         }
       });
     }, 2000); // Increased delay to ensure Rise content is fully loaded
