@@ -951,8 +951,11 @@
       return;
     }
     
-    // Get all sparkle-fountain blocks in the content area (these are the actual Rise blocks)
-    const allBlocks = Array.from(contentArea.children).filter(child => 
+    // Find lesson content within the content area
+    const lessonContent = contentArea.querySelector('[class*="lesson-body"], [class*="blocks"], [class*="sparkle"]') || contentArea;
+    
+    // Get all sparkle-fountain blocks in the lesson content area (these are the actual Rise blocks)
+    const allBlocks = Array.from(lessonContent.children).filter(child => 
       child.classList.contains('sparkle-fountain')
     );
     
@@ -968,15 +971,15 @@
     if (direction === 'up' && currentIndex > 0) {
       // Move the entire Rise block before the previous block
       const targetBlock = allBlocks[currentIndex - 1];
-      contentArea.insertBefore(riseBlock, targetBlock);
+      lessonContent.insertBefore(riseBlock, targetBlock);
       console.log(`[Rise Extension] Moved sparkle-fountain block up from index ${currentIndex} to ${currentIndex - 1}`);
     } else if (direction === 'down' && currentIndex < allBlocks.length - 1) {
       // Move the entire Rise block after the next block
       const targetBlock = allBlocks[currentIndex + 1];
       if (targetBlock.nextElementSibling) {
-        contentArea.insertBefore(riseBlock, targetBlock.nextElementSibling);
+        lessonContent.insertBefore(riseBlock, targetBlock.nextElementSibling);
       } else {
-        contentArea.appendChild(riseBlock);
+        lessonContent.appendChild(riseBlock);
       }
       console.log(`[Rise Extension] Moved sparkle-fountain block down from index ${currentIndex} to ${currentIndex + 1}`);
     } else {
@@ -1017,10 +1020,11 @@
       return;
     }
     
-    // Get all blocks within the lesson content area only - exclude our own interactions
+    // Get all blocks within the lesson content area only - exclude our own interactions for position calculation
     const allBlocks = Array.from(lessonBody.children).filter(block => 
       !block.querySelector('[id^="rise-interaction-"]') && 
-      !block.id?.startsWith('rise-interaction-')
+      !block.id?.startsWith('rise-interaction-') &&
+      !block.classList.contains('sparkle-fountain')
     );
     
     // Find the exact position by looking for the block containing our interaction
@@ -1483,7 +1487,8 @@
     // Filter out existing interaction blocks to get consistent indexing with save logic
     const allContentBlocks = Array.from(lessonContent.children).filter(block => 
       !block.querySelector('[id^="rise-interaction-"]') && 
-      !block.id?.startsWith('rise-interaction-')
+      !block.id?.startsWith('rise-interaction-') &&
+      !block.classList.contains('sparkle-fountain')
     );
     
     console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks in lesson content`);
@@ -1526,7 +1531,11 @@
     } else {
       // Insert at the calculated position within lesson content
       const targetIndex = Math.max(0, parseInt(insertionIndex));
-      if (allContentBlocks[targetIndex]) {
+      if (targetIndex === 0) {
+        // Insert at the beginning
+        lessonContent.insertBefore(riseBlockContainer, allContentBlocks[0]);
+        console.log(`[Rise Extension] Restored interaction inserted at beginning of lesson content`);
+      } else if (allContentBlocks[targetIndex]) {
         lessonContent.insertBefore(riseBlockContainer, allContentBlocks[targetIndex]);
         console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex} in lesson content`);
         
@@ -1546,7 +1555,7 @@
                   visibility: visible !important;
                   opacity: 1 !important;
                   position: static !important;
-                  z-index: auto !important;
+                  z-index: 1 !important;
                   width: 100% !important;
                   height: auto !important;
                   overflow: visible !important;
@@ -1558,7 +1567,7 @@
                   visibility: visible !important;
                   opacity: 1 !important;
                   position: static !important;
-                  z-index: auto !important;
+                  z-index: 2 !important;
                   width: 100% !important;
                   height: auto !important;
                   min-height: 200px !important;
