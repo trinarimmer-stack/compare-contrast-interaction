@@ -700,8 +700,11 @@
       injectInteractiveScript();
       console.log('[Rise Extension] Interactive script injected');
       
-      // Add event listeners for control buttons
-      addInteractionControls();
+      // Add event listeners for control buttons - but only in edit mode
+      if (!isPreviewMode()) {
+        addInteractionControls();
+        console.log('[Rise Extension] Added interaction controls for edit mode');
+      }
     } catch (error) {
       console.error('[Rise Extension] Error inserting configured component:', error);
     }
@@ -1027,14 +1030,17 @@
           interaction.style.display = 'block';
           interaction.style.visibility = 'visible';
           
-          // Hide edit controls in preview mode only
+          // Show interaction controls in edit mode, hide in preview mode
           const container = interaction.closest('.compare-contrast-container');
           const controls = container?.querySelector('.interaction-controls');
-          if (controls && isPreviewMode()) {
-            controls.style.display = 'none';
-            console.log('[Rise Extension] Hidden interaction controls in preview mode');
-          } else if (controls) {
-            controls.style.display = 'flex';
+          if (controls) {
+            if (isPreviewMode()) {
+              controls.style.display = 'none';
+              console.log('[Rise Extension] Hidden interaction controls in preview mode');
+            } else {
+              controls.style.display = 'flex';
+              console.log('[Rise Extension] Showing interaction controls in edit mode');
+            }
           }
           
           // Trigger initialization of each interaction
