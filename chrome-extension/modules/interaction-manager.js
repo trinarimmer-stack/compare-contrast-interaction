@@ -327,6 +327,8 @@ export class InteractionManager {
   }
 
   async findInsertionPoint() {
+    console.log('🔍 Looking for Rise insertion point...');
+    
     // Use Rise integration to find proper insertion point
     if (window.riseIntegration) {
       const insertionPoint = await window.riseIntegration.findBlockInsertionPoint();
@@ -336,7 +338,7 @@ export class InteractionManager {
       }
     }
 
-    // Enhanced Rise-specific selectors
+    // Enhanced Rise-specific selectors with debugging
     const riseSelectors = [
       '[data-testid="lesson-content"] .block:last-child',
       '.lesson-content .block:last-child',
@@ -344,19 +346,26 @@ export class InteractionManager {
       '.content-area .block:last-child',
       '.main-content .block:last-child',
       '[class*="lesson"] [class*="block"]:last-child',
-      '[class*="content"] [class*="block"]:last-child'
+      '[class*="content"] [class*="block"]:last-child',
+      // More specific Rise selectors
+      '[data-testid="lesson-content"] > div:last-child',
+      '.rise-lesson-content .block:last-child',
+      '[class*="rise"] [class*="content"] .block:last-child'
     ];
 
     for (const selector of riseSelectors) {
       const element = document.querySelector(selector);
-      if (element) {
-        console.log('✅ Found insertion point with Rise selector:', selector);
+      if (element && !element.classList.contains('apt-guide-overlay')) {
+        console.log('✅ Found insertion point with Rise selector:', selector, element);
         return element;
       }
     }
 
-    // Avoid using body as insertion point - this places blocks outside Rise content
-    console.warn('❌ No suitable Rise insertion point found - blocks may not display properly');
+    // If we still can't find a good spot, let's see what's available
+    console.warn('❌ No suitable Rise insertion point found');
+    const allBlocks = document.querySelectorAll('.block, [class*="block"]');
+    console.log('📋 Available blocks:', allBlocks.length, Array.from(allBlocks).map(b => b.className));
+    
     return null;
   }
 
