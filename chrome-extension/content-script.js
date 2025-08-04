@@ -1033,15 +1033,28 @@
     }
     
     if (currentIndex !== -1) {
-      // Update the config in localStorage with position
+      // Also save reference information about adjacent blocks for fallback positioning
+      const previousBlock = currentIndex > 0 ? allBlocks[currentIndex - 1] : null;
+      const nextBlock = currentIndex < allBlocks.length - 1 ? allBlocks[currentIndex + 1] : null;
+      
+      // Update the config in localStorage with position and reference data
       const storageKey = `rise-interaction-${interactionId}`;
       const existingConfig = localStorage.getItem(storageKey);
       if (existingConfig) {
         const config = JSON.parse(existingConfig);
         config.blockPosition = currentIndex;
         config.totalBlocks = allBlocks.length;
+        
+        // Save reference IDs or text content for fallback positioning
+        config.positionReferences = {
+          previousBlockId: previousBlock?.id || null,
+          nextBlockId: nextBlock?.id || null,
+          previousBlockContent: previousBlock?.textContent?.substring(0, 100) || null,
+          nextBlockContent: nextBlock?.textContent?.substring(0, 100) || null
+        };
+        
         localStorage.setItem(storageKey, JSON.stringify(config));
-        console.log(`[Rise Extension] Saved position ${currentIndex}/${allBlocks.length} for interaction ${interactionId}`);
+        console.log(`[Rise Extension] Saved position ${currentIndex}/${allBlocks.length} with references for interaction ${interactionId}`);
       }
     } else {
       console.log(`[Rise Extension] Could not determine position for ${interactionId}`);
@@ -1475,13 +1488,44 @@
     
     console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks in lesson content`);
     
-    if (savedPosition === undefined || savedPosition === 'bottom' || savedPosition >= allContentBlocks.length) {
+    // Try to find the best insertion point, considering block changes from connect/disconnect
+    let insertionIndex = savedPosition;
+    
+    // If we have reference data and the block count has changed, try to find a better position
+    if (config.positionReferences && config.totalBlocks !== allContentBlocks.length) {
+      console.log('[Rise Extension] Block count changed, attempting smart repositioning...');
+      
+      const refs = config.positionReferences;
+      let foundReferenceIndex = -1;
+      
+      // Try to find a reference block by ID first, then by content
+      for (let i = 0; i < allContentBlocks.length; i++) {
+        const block = allContentBlocks[i];
+        if ((refs.previousBlockId && block.id === refs.previousBlockId) ||
+            (refs.nextBlockId && block.id === refs.nextBlockId) ||
+            (refs.previousBlockContent && block.textContent?.includes(refs.previousBlockContent.substring(0, 50))) ||
+            (refs.nextBlockContent && block.textContent?.includes(refs.nextBlockContent.substring(0, 50)))) {
+          foundReferenceIndex = i;
+          // If we found the previous block, insert after it; if next block, insert before it
+          if ((refs.previousBlockId && block.id === refs.previousBlockId) ||
+              (refs.previousBlockContent && block.textContent?.includes(refs.previousBlockContent.substring(0, 50)))) {
+            insertionIndex = i + 1;
+          } else {
+            insertionIndex = i;
+          }
+          console.log(`[Rise Extension] Found reference block at ${i}, adjusting insertion to ${insertionIndex}`);
+          break;
+        }
+      }
+    }
+    
+    if (insertionIndex === undefined || insertionIndex === 'bottom' || insertionIndex >= allContentBlocks.length) {
       // Insert at the end of lesson content
       lessonContent.appendChild(riseBlockContainer);
       console.log('[Rise Extension] Restored interaction appended to lesson content (end position)');
     } else {
-      // Insert at the specific position within lesson content
-      const targetIndex = Math.max(0, parseInt(savedPosition));
+      // Insert at the calculated position within lesson content
+      const targetIndex = Math.max(0, parseInt(insertionIndex));
       if (allContentBlocks[targetIndex]) {
         lessonContent.insertBefore(riseBlockContainer, allContentBlocks[targetIndex]);
         console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex} in lesson content`);
