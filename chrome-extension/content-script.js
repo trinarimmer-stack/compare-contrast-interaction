@@ -1017,8 +1017,11 @@
       return;
     }
     
-    // Get all blocks within the lesson content area only - this must match restoration logic
-    const allBlocks = Array.from(lessonBody.children);
+    // Get all blocks within the lesson content area only - exclude our own interactions
+    const allBlocks = Array.from(lessonBody.children).filter(block => 
+      !block.querySelector('[id^="rise-interaction-"]') && 
+      !block.id?.startsWith('rise-interaction-')
+    );
     
     // Find the exact position by looking for the block containing our interaction
     let currentIndex = -1;
@@ -1464,7 +1467,11 @@
     
     // Insert the complete block structure at the saved position within lesson content
     const savedPosition = config.blockPosition;
-    const allContentBlocks = Array.from(lessonContent.children);
+    // Filter out existing interaction blocks to get consistent indexing with save logic
+    const allContentBlocks = Array.from(lessonContent.children).filter(block => 
+      !block.querySelector('[id^="rise-interaction-"]') && 
+      !block.id?.startsWith('rise-interaction-')
+    );
     
     console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks in lesson content`);
     
