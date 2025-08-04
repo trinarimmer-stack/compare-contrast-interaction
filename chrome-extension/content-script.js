@@ -1015,11 +1015,11 @@
     if (isPreviewMode()) {
       console.log('[Rise Extension] Preview mode detected - initializing interactions');
       
-      // Hide floating button in preview mode
+      // Remove any existing floating button in preview mode
       const floatingButton = document.getElementById('rise-compare-contrast-fab');
       if (floatingButton) {
-        floatingButton.style.display = 'none';
-        console.log('[Rise Extension] Hidden floating button in preview mode');
+        floatingButton.remove();
+        console.log('[Rise Extension] Removed floating button in preview mode');
       }
       
       // Ensure interaction script is loaded
@@ -1239,6 +1239,23 @@
         addInteractionControls();
         console.log('[Rise Extension] Added controls to restored interaction');
       }, 100);
+    } else {
+      // In preview mode, ensure interaction is visible and functional
+      const interactionDiv = riseBlockContainer.querySelector('.compare-contrast-interaction');
+      if (interactionDiv) {
+        interactionDiv.style.display = 'block';
+        interactionDiv.style.visibility = 'visible';
+        interactionDiv.style.opacity = '1';
+        interactionDiv.style.minHeight = '200px';
+        
+        // Initialize interaction functionality in preview mode
+        setTimeout(() => {
+          if (window.initializeCompareContrastInteraction) {
+            window.initializeCompareContrastInteraction(interactionDiv);
+            console.log('[Rise Extension] Initialized interaction in preview mode:', interactionId);
+          }
+        }, 500);
+      }
     }
     
     console.log('[Rise Extension] Interaction restored to DOM:', interactionId);
