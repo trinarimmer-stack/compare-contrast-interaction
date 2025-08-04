@@ -13,16 +13,68 @@
                         url.includes('?preview=') ||
                         url.includes('/share/') ||
                         url.includes('/published/') ||
-                        url.includes('/player/');
+                        url.includes('/player/') ||
+                        url.includes('preview=true') ||
+                        url.includes('mode=preview');
     
-    // Check for specific preview mode indicators (not just any preview button)
+    // Check for Rise's preview button being active/selected
+    const previewButtonActive = document.querySelector('button[data-testid*="preview"]:not([aria-pressed="false"])') ||
+                               document.querySelector('button[aria-label*="Preview"]:not([aria-pressed="false"])') ||
+                               document.querySelector('button[title*="Preview"]:not([aria-pressed="false"])') ||
+                               document.querySelector('.preview-button.active') ||
+                               document.querySelector('.preview-button.selected') ||
+                               document.querySelector('[role="tab"][aria-selected="true"][data-testid*="preview"]') ||
+                               document.querySelector('[role="tab"][aria-selected="true"]:contains("Preview")');
+    
+    // Check for specific preview mode indicators
     const hasPreviewModeIndicator = document.querySelector('[data-testid="PreviewModeIndicator"]') ||
+                                   document.querySelector('[data-testid="preview-mode-indicator"]') ||
+                                   document.querySelector('[data-mode="preview"]') ||
+                                   document.querySelector('[class*="preview-mode"]') ||
                                    document.body.classList.contains('preview-mode') ||
                                    document.documentElement.classList.contains('preview-mode') ||
-                                   document.querySelector('.rise-player');
+                                   document.querySelector('.rise-player') ||
+                                   document.querySelector('[data-view="preview"]');
     
-    const isPreview = isPreviewUrl || hasPreviewModeIndicator;
-    console.log('[Rise Extension] Preview mode check:', {url, isPreviewUrl, hasPreviewModeIndicator, isPreview});
+    // Check if we're in a preview iframe or specific preview context
+    const isInPreviewContext = window.top !== window.self || // In iframe
+                              document.querySelector('iframe[src*="preview"]') ||
+                              document.title.toLowerCase().includes('preview') ||
+                              document.querySelector('[data-testid*="PreviewFrame"]');
+    
+    // Check for authoring interface absence (might indicate preview)
+    const noAuthoringInterface = !document.querySelector('.blocks-authoring') && 
+                                 !document.querySelector('[data-testid*="authoring"]') &&
+                                 !document.querySelector('[data-testid*="editor"]') &&
+                                 document.querySelectorAll('*').length > 100; // Ensure page is loaded
+    
+    // Look for preview-specific content or layout
+    const hasPreviewContent = document.querySelector('[class*="course-preview"]') ||
+                             document.querySelector('[data-testid*="course-preview"]') ||
+                             document.querySelector('[class*="lesson-preview"]') ||
+                             document.querySelector('[data-testid*="lesson-preview"]');
+    
+    const isPreview = isPreviewUrl || hasPreviewModeIndicator || isInPreviewContext || previewButtonActive || hasPreviewContent;
+    
+    // Enhanced logging for debugging
+    console.log('[Rise Extension] Preview mode check:', {
+      url, 
+      isPreviewUrl, 
+      previewButtonActive: !!previewButtonActive,
+      hasPreviewModeIndicator: !!hasPreviewModeIndicator, 
+      isInPreviewContext,
+      noAuthoringInterface,
+      hasPreviewContent: !!hasPreviewContent,
+      isPreview,
+      bodyClasses: document.body.className,
+      htmlClasses: document.documentElement.className,
+      title: document.title,
+      isInIframe: window.top !== window.self,
+      allTestIds: Array.from(document.querySelectorAll('[data-testid]')).slice(0, 15).map(el => el.getAttribute('data-testid')),
+      authElements: !!document.querySelector('.blocks-authoring'),
+      elementCount: document.querySelectorAll('*').length
+    });
+    
     return isPreview;
   }
 
@@ -956,7 +1008,20 @@
 
   // Initialize the extension - simplified version
   function initializeExtension() {
-    console.log('[Rise Extension] Initializing on:', window.location.href);
+    console.log('[Rise Extension] ========== INITIALIZING EXTENSION ==========');
+    console.log('[Rise Extension] Current URL:', window.location.href);
+    console.log('[Rise Extension] Document title:', document.title);
+    console.log('[Rise Extension] Body classes:', document.body.className);
+    console.log('[Rise Extension] HTML classes:', document.documentElement.className);
+    console.log('[Rise Extension] Window location:', {
+      href: window.location.href,
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash
+    });
+    
+    const previewMode = isPreviewMode();
+    console.log('[Rise Extension] Preview mode detected:', previewMode);
     
     // Add custom CSS if not already added
     if (!document.getElementById('compare-contrast-styles')) {
@@ -965,12 +1030,19 @@
       style.rel = 'stylesheet';
       style.href = chrome.runtime.getURL('styles.css');
       document.head.appendChild(style);
+      console.log('[Rise Extension] Added custom styles');
     }
 
     // Create floating button only in editing mode
     const createFloatingButton = () => {
       console.log('[Rise Extension] createFloatingButton called');
-      console.log('[Rise Extension] isPreviewMode():', isPreviewMode());
+      console.log('[Rise Extension] Current URL:', window.location.href);
+      console.log('[Rise Extension] Document title:', document.title);
+      console.log('[Rise Extension] Body classes:', document.body.className);
+      console.log('[Rise Extension] HTML classes:', document.documentElement.className);
+      
+      const previewModeResult = isPreviewMode();
+      console.log('[Rise Extension] isPreviewMode() returned:', previewModeResult);
       
       // Don't show floating button in preview mode
       if (isPreviewMode()) {
@@ -990,6 +1062,7 @@
         return;
       }
       
+      // Add debugging to see when floating button is created
       console.log('[Rise Extension] Creating floating action button...');
       const floatingBtn = document.createElement('div');
       floatingBtn.id = 'rise-compare-contrast-fab';
@@ -1031,7 +1104,7 @@
       
       floatingBtn.appendChild(button);
       document.body.appendChild(floatingBtn);
-      console.log('[Rise Extension] Floating button created and shown');
+      console.log('[Rise Extension] Floating button created and added to DOM - should be visible now');
     };
 
     // Initialize existing interactions in preview mode
@@ -1473,7 +1546,15 @@
   }
 
   // Initial load
+  console.log('[Rise Extension] ========== SCRIPT LOADING ==========');
+  console.log('[Rise Extension] Script loaded at:', new Date().toISOString());
+  console.log('[Rise Extension] Initial URL:', window.location.href);
+  console.log('[Rise Extension] Initial title:', document.title);
+  console.log('[Rise Extension] Is preview mode initially?', isPreviewMode());
+  console.log('[Rise Extension] Document ready state:', document.readyState);
+  
   waitForRise().then(() => {
+    console.log('[Rise Extension] Rise interface detected, initializing...');
     initializeExtension();
     watchForNavigation();
   });
