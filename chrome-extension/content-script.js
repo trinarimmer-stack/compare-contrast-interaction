@@ -87,6 +87,8 @@
       const checkForRise = () => {
         attempts++;
         
+        console.log(`[Rise Extension] Attempt ${attempts}: Looking for Rise interface...`);
+        
         // First check if we're in preview mode - if so, resolve quickly
         if (isPreviewMode()) {
           console.log(`[Rise Extension] Preview mode detected, resolving immediately (attempt ${attempts})`);
@@ -239,7 +241,7 @@
         
         // Check if page has loaded enough content
         // In preview mode, accept lower element count since there's less UI
-        const minElementsRequired = isPreviewMode() ? 200 : 500;
+        const minElementsRequired = 200;
         if (totalElements < minElementsRequired) {
           console.log(`[Rise Extension] Page still loading (${totalElements} elements, need ${minElementsRequired}), waiting...`);
           if (attempts < maxAttempts) {
@@ -250,13 +252,6 @@
         }
 
         let riseInterface = null;
-        
-        // In preview mode, we don't need the authoring interface - just resolve with body
-        if (isPreviewMode()) {
-          console.log('[Rise Extension] Preview mode - using document body as interface');
-          resolve(document.body);
-          return;
-        }
         
         // For authoring mode, look for interface elements
         for (const selector of selectors) {
