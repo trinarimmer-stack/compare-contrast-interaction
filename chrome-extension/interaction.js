@@ -99,6 +99,13 @@
       const resetBtn = container.querySelector('#reset-button');
 
       if (textarea) {
+        // Ensure textarea is focusable and not blocked by overlays
+        textarea.style.pointerEvents = 'auto';
+        textarea.style.position = 'relative';
+        textarea.style.zIndex = '10';
+        textarea.disabled = false;
+        textarea.readOnly = false;
+        
         // Remove any existing listeners to prevent conflicts
         textarea.removeEventListener('input', handleTextareaChange);
         textarea.addEventListener('input', handleTextareaChange);

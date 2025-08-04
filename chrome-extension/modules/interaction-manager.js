@@ -87,16 +87,27 @@ export class InteractionManager {
 
       // Find insertion point
       const insertionPoint = targetElement || await this.findInsertionPoint();
+      
       if (!insertionPoint) {
-        this.uiManager.showToast('Could not find suitable insertion point', 'error');
-        return false;
-      }
-
-      // Insert the block
-      const inserted = DOMUtils.insertAfter(blockElement, insertionPoint);
-      if (!inserted) {
-        this.uiManager.showToast('Failed to insert interaction block', 'error');
-        return false;
+        console.warn('❌ No suitable insertion point found - creating a fallback container');
+        // Create a fallback container in lesson content if we can't find blocks
+        const lessonContent = document.querySelector('[data-testid="lesson-content"], .lesson-content, .content-area');
+        if (lessonContent) {
+          const fallbackContainer = document.createElement('div');
+          fallbackContainer.className = 'rise-custom-content-container';
+          lessonContent.appendChild(fallbackContainer);
+          DOMUtils.insertAfter(blockElement, fallbackContainer);
+        } else {
+          this.uiManager.showToast('Cannot find lesson content area', 'error');
+          return false;
+        }
+      } else {
+        // Insert after the target element
+        const inserted = DOMUtils.insertAfter(blockElement, insertionPoint);
+        if (!inserted) {
+          this.uiManager.showToast('Failed to insert interaction block', 'error');
+          return false;
+        }
       }
 
       // Add controls and initialize
@@ -332,41 +343,41 @@ export class InteractionManager {
     // Use Rise integration to find proper insertion point
     if (window.riseIntegration) {
       const insertionPoint = await window.riseIntegration.findBlockInsertionPoint();
-      if (insertionPoint) {
+      if (insertionPoint && !this.isGuideOverlay(insertionPoint)) {
         console.log('✅ Found Rise insertion point:', insertionPoint);
         return insertionPoint;
       }
     }
 
-    // Enhanced Rise-specific selectors with debugging
+    // Look for actual Rise lesson blocks, avoiding guide overlays
     const riseSelectors = [
-      '[data-testid="lesson-content"] .block:last-child',
-      '.lesson-content .block:last-child',
-      '.lesson-body .block:last-child',
-      '.content-area .block:last-child',
-      '.main-content .block:last-child',
-      '[class*="lesson"] [class*="block"]:last-child',
-      '[class*="content"] [class*="block"]:last-child',
-      // More specific Rise selectors
-      '[data-testid="lesson-content"] > div:last-child',
-      '.rise-lesson-content .block:last-child',
-      '[class*="rise"] [class*="content"] .block:last-child'
+      '[data-testid="lesson-content"] .block:last-child:not([class*="overlay"]):not([class*="guide"])',
+      '.lesson-content .block:last-child:not([class*="overlay"]):not([class*="guide"])', 
+      '.lesson-body .block:last-child:not([class*="overlay"]):not([class*="guide"])',
+      '.content-area .block:last-child:not([class*="overlay"]):not([class*="guide"])',
+      '.main-content .block:last-child:not([class*="overlay"]):not([class*="guide"])',
+      // Look for Rise-specific content elements
+      '[data-testid="lesson-content"] > div:last-child:not([class*="overlay"]):not([class*="guide"])',
+      '.rise-lesson-content .block:last-child:not([class*="overlay"]):not([class*="guide"])'
     ];
 
     for (const selector of riseSelectors) {
       const element = document.querySelector(selector);
-      if (element && !element.classList.contains('apt-guide-overlay')) {
-        console.log('✅ Found insertion point with Rise selector:', selector, element);
+      if (element && !this.isGuideOverlay(element)) {
+        console.log('✅ Found valid insertion point:', selector, element);
         return element;
       }
     }
 
-    // If we still can't find a good spot, let's see what's available
-    console.warn('❌ No suitable Rise insertion point found');
-    const allBlocks = document.querySelectorAll('.block, [class*="block"]');
-    console.log('📋 Available blocks:', allBlocks.length, Array.from(allBlocks).map(b => b.className));
-    
+    console.warn('❌ No suitable Rise content insertion point found');
     return null;
+  }
+
+  isGuideOverlay(element) {
+    return element.classList.contains('apt-guide-overlay') || 
+           element.className.includes('overlay') ||
+           element.className.includes('guide') ||
+           element.closest('.apt-guide-overlay');
   }
 
   generateInteractionId() {
@@ -386,6 +397,12 @@ export class InteractionManager {
 
   async restoreAllInteractions() {
     try {
+      // Avoid duplicate restoration in preview mode
+      if (document.querySelector('[data-interaction-id]')) {
+        console.log('🔄 Interactions already restored, skipping...');
+        return;
+      }
+
       const interactions = await this.storageManager.syncFromChromeStorage();
       
       for (const [interactionId, config] of Object.entries(interactions)) {
