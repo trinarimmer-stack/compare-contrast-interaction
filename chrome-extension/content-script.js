@@ -1160,8 +1160,29 @@
       }
     }
     
-    // Append to content area
-    activeArea.appendChild(interactionElement);
+    // IMPORTANT: Properly insert using the same method as new interactions
+    // Find existing blocks to insert after
+    const existingBlocks = activeArea.querySelectorAll('.block__inner');
+    const existingBlocksArray = Array.from(existingBlocks);
+    
+    if (existingBlocksArray.length > 0) {
+      // Insert after the last existing block
+      const lastBlock = existingBlocksArray[existingBlocksArray.length - 1];
+      const insertionPoint = lastBlock.closest('.sparkle-fountain') || lastBlock.parentElement;
+      
+      if (insertionPoint && insertionPoint.parentElement) {
+        insertionPoint.parentElement.insertBefore(interactionElement, insertionPoint.nextSibling);
+        console.log('[Rise Extension] Restored interaction inserted after existing block');
+      } else {
+        // Fallback: append to content area
+        activeArea.appendChild(interactionElement);
+        console.log('[Rise Extension] Restored interaction appended to content area');
+      }
+    } else {
+      // No existing blocks, append to content area
+      activeArea.appendChild(interactionElement);
+      console.log('[Rise Extension] Restored interaction appended to empty content area');
+    }
     
     // Add event listeners only in editing mode
     if (!window.location.href.includes('/preview') && !window.location.href.includes('/published')) {
