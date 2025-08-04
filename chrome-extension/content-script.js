@@ -1335,6 +1335,8 @@
       const existingInteractions = document.querySelectorAll('.compare-contrast-interaction');
       const existingIds = Array.from(existingInteractions).map(el => el.id);
       
+      console.log('[Rise Extension] Existing interaction IDs in DOM:', existingIds);
+      
       storedInteractions.forEach(({ id, config }) => {
         if (!existingIds.includes(id)) {
           console.log('[Rise Extension] Restoring interaction:', id);
@@ -1425,13 +1427,41 @@
       // In preview mode, ensure interaction is visible and functional
       const interactionDiv = riseBlockContainer.querySelector('.compare-contrast-interaction');
       if (interactionDiv) {
+        // Debug: Log current state and parent containers
+        console.log('[Rise Extension] Found interaction div in preview:', {
+          div: interactionDiv,
+          parentBlock: riseBlockContainer,
+          computedStyle: window.getComputedStyle(interactionDiv),
+          parentStyle: window.getComputedStyle(riseBlockContainer),
+          isConnected: riseBlockContainer.closest('.connected-blocks, .lesson-block-group, .block-group'),
+          parentClasses: riseBlockContainer.className,
+          parentPosition: riseBlockContainer.getBoundingClientRect()
+        });
+        
+        // Check if parent block is part of connected blocks system
+        const connectedGroup = riseBlockContainer.closest('.connected-blocks, .lesson-block-group, .block-group');
+        if (connectedGroup) {
+          console.log('[Rise Extension] Interaction is in connected block group:', connectedGroup);
+          // Apply styles to ensure visibility in connected block context
+          connectedGroup.style.setProperty('display', 'block', 'important');
+          connectedGroup.style.setProperty('visibility', 'visible', 'important');
+        }
+        
+        // Force the parent Rise block to be visible too
+        riseBlockContainer.style.setProperty('display', 'block', 'important');
+        riseBlockContainer.style.setProperty('visibility', 'visible', 'important');
+        riseBlockContainer.style.setProperty('opacity', '1', 'important');
+        riseBlockContainer.style.setProperty('height', 'auto', 'important');
+        
         // Override all potential hiding styles with !important
         interactionDiv.style.setProperty('display', 'block', 'important');
         interactionDiv.style.setProperty('visibility', 'visible', 'important');
         interactionDiv.style.setProperty('opacity', '1', 'important');
         interactionDiv.style.setProperty('position', 'relative', 'important');
-        interactionDiv.style.setProperty('z-index', '1', 'important');
+        interactionDiv.style.setProperty('z-index', '1000', 'important');
         interactionDiv.style.setProperty('min-height', '200px', 'important');
+        interactionDiv.style.setProperty('width', '100%', 'important');
+        interactionDiv.style.setProperty('max-width', 'none', 'important');
         
         // Remove editor-specific styling that might hide content in preview
         interactionDiv.style.setProperty('border', '1px solid #e5e7eb', 'important');
