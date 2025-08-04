@@ -801,25 +801,15 @@ class InteractionManager {
   }
 
   moveInteraction(interactionId, direction) {
-    console.log('moveInteraction called with:', interactionId, direction);
-    
     const element = document.querySelector(`[data-interaction-id="${interactionId}"]`);
-    console.log('Found element:', element);
-    
     if (!element) {
-      console.log('Element not found');
       this.uiManager.showToast('Interaction element not found', 'error');
       return;
     }
     
     const parent = element.parentNode;
-    console.log('Parent element:', parent);
-    
     const allSiblings = Array.from(parent.children);
-    console.log('All siblings:', allSiblings.length);
-    
     const currentIndex = allSiblings.indexOf(element);
-    console.log('Current index:', currentIndex);
     
     let targetIndex;
     if (direction === 'up') {
@@ -828,11 +818,8 @@ class InteractionManager {
       targetIndex = Math.min(allSiblings.length - 1, currentIndex + 1);
     }
     
-    console.log('Target index:', targetIndex);
-    
     // Only move if the target position is different from current
     if (targetIndex === currentIndex) {
-      console.log('Already at boundary');
       this.uiManager.showToast(`Cannot move ${direction} - already at the ${direction === 'up' ? 'top' : 'bottom'}`, 'warning');
       return;
     }
@@ -852,7 +839,6 @@ class InteractionManager {
       parent.appendChild(element);
     }
     
-    console.log('Element moved successfully');
     this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
   }
 
