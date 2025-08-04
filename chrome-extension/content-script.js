@@ -1463,8 +1463,13 @@ async function insertBlockAtZone(zone) {
       interactionManager.addInteractionControls(interactionElement, interactionId);
     }
     
-    // Replace the zone with the interaction
-    zone.parentNode.replaceChild(interactionElement, zone);
+    // Replace the zone with the interaction (with null check)
+    if (zone && zone.parentNode) {
+      zone.parentNode.replaceChild(interactionElement, zone);
+    } else {
+      console.warn('Zone or parent node not available, appending to body');
+      document.body.appendChild(interactionElement);
+    }
     
     // Initialize interaction functionality
     interactionManager.initializeInteraction(interactionElement);
