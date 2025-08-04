@@ -1140,37 +1140,6 @@
     }, 2000); // Increased delay to ensure Rise content is fully loaded
   }
   
-  // Helper function to find active content area (reuse existing logic)
-  function findActiveContentArea() {
-    const possibleTargets = [
-      '.blocks-authoring .lesson-blocks',
-      '.lesson-blocks', 
-      '.blocks-authoring [class*="lesson-blocks"]',
-      '.blocks-authoring [class*="blocks-container"]',
-      '.blocks-authoring [class*="content-blocks"]',
-      '.blocks-authoring .blocks',
-      '.lesson-content .blocks',
-      '.lesson-content',
-      '.blocks-content',
-      '.content-blocks',
-      '[data-testid="lesson-content"]',
-      '[data-testid="content-area"]',
-      '.content-area',
-      '.blocks-authoring > div:nth-child(2)',
-      '.blocks-authoring > div:last-child',
-      '.blocks-authoring'
-    ];
-    
-    for (const selector of possibleTargets) {
-      const area = document.querySelector(selector);
-      if (area) {
-        console.log(`[Rise Extension] Found content area for restoration: ${selector}`);
-        return area;
-      }
-    }
-    
-    return null;
-  }
   // Function to restore a single interaction to the DOM
   function restoreInteractionToDOM(interactionId, config) {
     const { activityInstructions, prompt, idealResponse, placeholder } = config;
