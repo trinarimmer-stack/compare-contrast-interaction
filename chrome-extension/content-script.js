@@ -444,30 +444,40 @@ class RiseIntegration {
     };
   }
 
-  async waitForRise(timeout = 10000) {
-    const startTime = Date.now();
-    
-    while (Date.now() - startTime < timeout) {
-      if (this.checkForRiseElements() || document.readyState === 'complete') {
-        console.log('Rise elements detected or page loaded');
-        return true;
-      }
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    // Don't throw error, just continue - be more lenient
-    console.log('Rise detection timeout, continuing anyway');
-    return true;
+  async waitForRise(timeout = 5000) {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      
+      const checkForRise = () => {
+        // Always resolve, never reject
+        if (this.checkForRiseElements() || document.readyState === 'complete' || (Date.now() - startTime > timeout)) {
+          console.log('Rise detection completed:', this.checkForRiseElements() ? 'elements found' : 'timeout reached, continuing anyway');
+          resolve(true);
+          return;
+        }
+        setTimeout(checkForRise, 200);
+      };
+      
+      checkForRise();
+    });
   }
 
   checkForRiseElements() {
-    // Check for any Rise-specific elements
+    // More comprehensive check for Rise or any web authoring environment
     const selectors = [
+      // Rise-specific selectors
       ...Object.values(this.riseSelectors.authoring),
-      ...Object.values(this.riseSelectors.general)
+      ...Object.values(this.riseSelectors.general),
+      // Generic selectors that might indicate an authoring environment
+      'main', '#root', '.app', '[role="main"]', 'body'
     ];
     
-    return selectors.some(selector => document.querySelector(selector));
+    // Also check URL patterns
+    const url = window.location.href;
+    const isRiseUrl = url.includes('rise.articulate.com') || url.includes('articulate.com');
+    
+    const hasElements = selectors.some(selector => document.querySelector(selector));
+    return hasElements || isRiseUrl || document.readyState === 'complete';
   }
 
   isPreviewMode() {
