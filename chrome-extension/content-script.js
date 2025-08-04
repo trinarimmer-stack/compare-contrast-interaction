@@ -994,10 +994,14 @@
         currentUrl = window.location.href;
         console.log('[Rise Extension] Navigation detected to:', currentUrl);
         
-        // Re-initialize when navigating to course editor
-        if (currentUrl.includes('/lessons/') || currentUrl.includes('/course/')) {
+        // Re-initialize when navigating to course editor or preview
+        if (currentUrl.includes('/lessons/') || currentUrl.includes('/course/') || currentUrl.includes('/preview')) {
           setTimeout(() => {
-            waitForRise().then(initializeExtension);
+            waitForRise().then(() => {
+              initializeExtension();
+              // Also try to restore interactions after navigation
+              setTimeout(() => restoreInteractionsFromStorage(), 3000);
+            });
           }, 1000);
         }
       }
@@ -1011,6 +1015,22 @@
     // Also listen for pushstate/popstate events
     window.addEventListener('popstate', () => {
       setTimeout(() => {
+        waitForRise().then(() => {
+          initializeExtension();
+          setTimeout(() => restoreInteractionsFromStorage(), 3000);
+        });
+      }, 1000);
+    });
+    
+    // Listen for hashchange events (sometimes Rise uses hash routing)
+    window.addEventListener('hashchange', () => {
+      setTimeout(() => {
+        waitForRise().then(() => {
+          initializeExtension();
+          setTimeout(() => restoreInteractionsFromStorage(), 3000);
+        });
+      }, 1000);
+    });
         waitForRise().then(initializeExtension);
       }, 1000);
     });
@@ -1020,39 +1040,76 @@
   function restoreInteractionsFromStorage() {
     console.log('[Rise Extension] Restoring interactions from localStorage');
     
-    // Find all stored interactions
-    const storedInteractions = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('rise-interaction-')) {
-        const configData = localStorage.getItem(key);
-        const interactionId = key.replace('rise-interaction-', '');
-        storedInteractions.push({ id: interactionId, config: JSON.parse(configData) });
+    // Wait a bit for Rise to finish loading its content
+    setTimeout(() => {
+      // Find all stored interactions
+      const storedInteractions = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('rise-interaction-')) {
+          const configData = localStorage.getItem(key);
+          const interactionId = key.replace('rise-interaction-', '');
+          storedInteractions.push({ id: interactionId, config: JSON.parse(configData) });
+        }
+      }
+      
+      console.log('[Rise Extension] Found stored interactions:', storedInteractions.length);
+      
+      // Check if interactions already exist in DOM to avoid duplicates
+      const existingInteractions = document.querySelectorAll('.compare-contrast-interaction');
+      const existingIds = Array.from(existingInteractions).map(el => el.id);
+      
+      storedInteractions.forEach(({ id, config }) => {
+        if (!existingIds.includes(id)) {
+          console.log('[Rise Extension] Restoring interaction:', id);
+          restoreInteractionToDOM(id, config);
+        } else {
+          console.log('[Rise Extension] Interaction already exists, skipping:', id);
+        }
+      });
+    }, 2000); // Increased delay to ensure Rise content is fully loaded
+  }
+  
+  // Helper function to find active content area (reuse existing logic)
+  function findActiveContentArea() {
+    const possibleTargets = [
+      '.blocks-authoring .lesson-blocks',
+      '.lesson-blocks', 
+      '.blocks-authoring [class*="lesson-blocks"]',
+      '.blocks-authoring [class*="blocks-container"]',
+      '.blocks-authoring [class*="content-blocks"]',
+      '.blocks-authoring .blocks',
+      '.lesson-content .blocks',
+      '.lesson-content',
+      '.blocks-content',
+      '.content-blocks',
+      '[data-testid="lesson-content"]',
+      '[data-testid="content-area"]',
+      '.content-area',
+      '.blocks-authoring > div:nth-child(2)',
+      '.blocks-authoring > div:last-child',
+      '.blocks-authoring'
+    ];
+    
+    for (const selector of possibleTargets) {
+      const area = document.querySelector(selector);
+      if (area) {
+        console.log(`[Rise Extension] Found content area for restoration: ${selector}`);
+        return area;
       }
     }
     
-    console.log('[Rise Extension] Found stored interactions:', storedInteractions.length);
-    
-    // Check if interactions already exist in DOM to avoid duplicates
-    const existingInteractions = document.querySelectorAll('.compare-contrast-interaction');
-    const existingIds = Array.from(existingInteractions).map(el => el.id);
-    
-    storedInteractions.forEach(({ id, config }) => {
-      if (!existingIds.includes(id)) {
-        console.log('[Rise Extension] Restoring interaction:', id);
-        restoreInteractionToDOM(id, config);
-      }
-    });
+    return null;
   }
-  
-  // Function to restore a single interaction to the DOM
   function restoreInteractionToDOM(interactionId, config) {
     const { activityInstructions, prompt, idealResponse, placeholder } = config;
     
-    // Find suitable content area for restoration
+    // Find suitable content area for restoration - use the same logic as insertion
     const activeArea = findActiveContentArea();
     if (!activeArea) {
-      console.log('[Rise Extension] Could not find content area for restoration');
+      console.log('[Rise Extension] Could not find content area for restoration, retrying...');
+      // Retry after a delay
+      setTimeout(() => restoreInteractionToDOM(interactionId, config), 1000);
       return;
     }
     
