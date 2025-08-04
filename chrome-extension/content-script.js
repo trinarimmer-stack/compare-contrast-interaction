@@ -811,11 +811,6 @@ class InteractionManager {
     const allSiblings = Array.from(parent.children);
     const currentIndex = allSiblings.indexOf(element);
     
-    console.log('BEFORE MOVE:');
-    console.log('Current index:', currentIndex);
-    console.log('Element classes:', element.className);
-    console.log('Previous sibling:', element.previousElementSibling?.tagName, element.previousElementSibling?.className?.substring(0, 50));
-    console.log('Next sibling:', element.nextElementSibling?.tagName, element.nextElementSibling?.className?.substring(0, 50));
     
     let targetIndex;
     if (direction === 'up') {
@@ -835,7 +830,7 @@ class InteractionManager {
       allSiblings[targetIndex] : 
       (targetIndex + 1 < allSiblings.length ? allSiblings[targetIndex + 1] : null);
     
-    console.log('Reference element for insertion:', referenceElement?.tagName, referenceElement?.className?.substring(0, 50));
+    
     
     // Remove element from current position
     element.remove();
