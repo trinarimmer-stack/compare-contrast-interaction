@@ -837,14 +837,19 @@ class InteractionManager {
       return;
     }
     
+    // Get the reference element before removing
+    const referenceElement = direction === 'up' ? 
+      allSiblings[targetIndex] : 
+      (targetIndex + 1 < allSiblings.length ? allSiblings[targetIndex + 1] : null);
+    
     // Remove element from current position
     element.remove();
     
     // Insert at new position
-    if (targetIndex >= allSiblings.length - 1) {
-      parent.appendChild(element);
+    if (referenceElement) {
+      parent.insertBefore(element, referenceElement);
     } else {
-      parent.insertBefore(element, allSiblings[targetIndex + (direction === 'up' ? 0 : 1)]);
+      parent.appendChild(element);
     }
     
     console.log('Element moved successfully');
