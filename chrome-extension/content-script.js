@@ -1170,7 +1170,6 @@
     
     console.log('[Rise Extension] Interaction restored to DOM:', interactionId);
   }
-  }
   
   // Helper function to create interaction HTML
   function createInteractionHTML(interactionId, encodedConfigData, prompt, ideal, placeholder) {
