@@ -57,24 +57,22 @@
     
     const isPreview = isPreviewUrl || hasPreviewModeIndicator || isInPreviewContext || previewButtonActive || hasPreviewContent;
     
-    // Enhanced logging for debugging
-    console.log('[Rise Extension] Preview mode check:', {
-      url, 
-      isPreviewUrl, 
-      previewButtonActive: !!previewButtonActive,
-      hasPreviewModeIndicator: !!hasPreviewModeIndicator, 
-      isInPreviewContext,
-      noAuthoringInterface,
-      hasPreviewContent: !!hasPreviewContent,
-      isPreview,
-      bodyClasses: document.body.className,
-      htmlClasses: document.documentElement.className,
-      title: document.title,
-      isInIframe: window.top !== window.self,
-      allTestIds: Array.from(document.querySelectorAll('[data-testid]')).slice(0, 15).map(el => el.getAttribute('data-testid')),
-      authElements: !!document.querySelector('.blocks-authoring'),
-      elementCount: document.querySelectorAll('*').length
-    });
+    // Only log when there's a change in preview mode status to reduce console spam
+    if (!window.lastPreviewModeStatus || window.lastPreviewModeStatus !== isPreview) {
+      console.log('[Rise Extension] Preview mode changed:', {
+        url, 
+        isPreviewUrl, 
+        previewButtonActive: !!previewButtonActive,
+        hasPreviewModeIndicator: !!hasPreviewModeIndicator, 
+        isInPreviewContext,
+        noAuthoringInterface,
+        hasPreviewContent: !!hasPreviewContent,
+        isPreview,
+        bodyClasses: document.body.className,
+        previousStatus: window.lastPreviewModeStatus
+      });
+      window.lastPreviewModeStatus = isPreview;
+    }
     
     return isPreview;
   }
