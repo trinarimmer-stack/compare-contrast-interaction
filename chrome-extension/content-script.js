@@ -1286,6 +1286,15 @@ function createInsertionZone(referenceBlock, position) {
     opacity: 0;
   `;
   
+  // Store insertion location data on the zone
+  zone.dataset.referenceBlockId = referenceBlock.id || `block-${Date.now()}`;
+  zone.dataset.insertPosition = position;
+  
+  // Ensure reference block has an ID for later reference
+  if (!referenceBlock.id) {
+    referenceBlock.id = zone.dataset.referenceBlockId;
+  }
+  
   // Add hover effect
   zone.addEventListener('mouseenter', () => {
     zone.style.background = 'rgba(102, 126, 234, 0.1)';
@@ -1463,11 +1472,29 @@ async function insertBlockAtZone(zone) {
       interactionManager.addInteractionControls(interactionElement, interactionId);
     }
     
-    // Replace the zone with the interaction (with null check)
-    if (zone && zone.parentNode) {
-      zone.parentNode.replaceChild(interactionElement, zone);
+    // Find the reference block and insert the interaction
+    const referenceBlockId = zone.dataset.referenceBlockId;
+    const insertPosition = zone.dataset.insertPosition;
+    const referenceBlock = document.getElementById(referenceBlockId);
+    
+    if (referenceBlock && referenceBlock.parentNode) {
+      // Remove the zone first
+      if (zone.parentNode) {
+        zone.parentNode.removeChild(zone);
+      }
+      
+      // Insert the interaction at the correct position
+      if (insertPosition === 'before') {
+        referenceBlock.parentNode.insertBefore(interactionElement, referenceBlock);
+      } else {
+        referenceBlock.parentNode.insertBefore(interactionElement, referenceBlock.nextSibling);
+      }
     } else {
-      console.warn('Zone or parent node not available, appending to body');
+      console.warn('Reference block not found, appending to document body');
+      // Remove zone if it still exists
+      if (zone && zone.parentNode) {
+        zone.parentNode.removeChild(zone);
+      }
       document.body.appendChild(interactionElement);
     }
     
