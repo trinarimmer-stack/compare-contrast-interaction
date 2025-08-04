@@ -888,14 +888,24 @@
       document.head.appendChild(style);
     }
 
-    // Detect if we're in preview mode
+    // Detect if we're in preview mode - expanded detection
     const isPreviewMode = () => {
-      return window.location.href.includes('/preview') || 
-             window.location.href.includes('/published') ||
+      const url = window.location.href;
+      const isPreview = url.includes('/preview') || 
+             url.includes('/published') ||
+             url.includes('/player/') ||
              document.querySelector('[data-testid*="preview"]') ||
              document.querySelector('.preview-mode') ||
+             document.querySelector('.player-mode') ||
              document.body.classList.contains('preview-mode') ||
-             document.documentElement.classList.contains('preview-mode');
+             document.body.classList.contains('player-mode') ||
+             document.documentElement.classList.contains('preview-mode') ||
+             document.documentElement.classList.contains('player-mode') ||
+             document.querySelector('.rise-player') ||
+             !document.querySelector('.blocks-authoring'); // If no authoring interface, likely preview
+      
+      console.log('[Rise Extension] Preview mode check:', { url, isPreview });
+      return isPreview;
     };
 
     // Create floating button only in editing mode
@@ -958,25 +968,41 @@
 
     // Initialize existing interactions in preview mode
     if (isPreviewMode()) {
-      console.log('[Rise Extension] Preview mode - initializing existing interactions');
+      console.log('[Rise Extension] Preview mode detected - initializing interactions');
       // Ensure interaction script is loaded
       injectInteractiveScript();
       
-      // Restore interactions from localStorage in preview mode
+      // Force restore interactions in preview mode with multiple attempts
       restoreInteractionsFromStorage();
+      
+      // Additional attempts with longer delays for preview mode
+      setTimeout(() => {
+        console.log('[Rise Extension] Second restoration attempt in preview mode');
+        restoreInteractionsFromStorage();
+      }, 3000);
+      
+      setTimeout(() => {
+        console.log('[Rise Extension] Final restoration attempt in preview mode');
+        restoreInteractionsFromStorage();
+      }, 5000);
       
       // Wait for interactions to be available and initialize them
       setTimeout(() => {
         const interactions = document.querySelectorAll('.compare-contrast-interaction');
-        console.log(`[Rise Extension] Found ${interactions.length} interactions to initialize`);
+        console.log(`[Rise Extension] Found ${interactions.length} interactions to initialize in preview`);
         
         interactions.forEach(interaction => {
+          // Make sure interaction is visible in preview mode
+          interaction.style.display = 'block';
+          interaction.style.visibility = 'visible';
+          
           // Trigger initialization of each interaction
           if (window.initializeCompareContrastInteraction) {
+            console.log('[Rise Extension] Initializing interaction:', interaction.id);
             window.initializeCompareContrastInteraction(interaction);
           }
         });
-      }, 1000);
+      }, 6000);
     } else {
       // Only create floating button in editing mode and restore interactions
       createFloatingButton();
@@ -1113,6 +1139,21 @@
       return;
     }
     
+  // Function to restore a single interaction to the DOM
+  function restoreInteractionToDOM(interactionId, config) {
+    const { activityInstructions, prompt, idealResponse, placeholder } = config;
+    
+    // Find suitable content area for restoration - use the same logic as insertion
+    const activeArea = findActiveContentArea();
+    if (!activeArea) {
+      console.log('[Rise Extension] Could not find content area for restoration, retrying...');
+      // Retry after a delay
+      setTimeout(() => restoreInteractionToDOM(interactionId, config), 1000);
+      return;
+    }
+    
+    console.log('[Rise Extension] Restoring interaction to area:', activeArea.className);
+    
     const configData = JSON.stringify(config);
     const encodedConfigData = btoa(configData);
     
@@ -1123,13 +1164,27 @@
     tempDiv.innerHTML = interactionHtml;
     const interactionElement = tempDiv.firstElementChild;
     
+    // Ensure visibility in preview mode
+    if (window.location.href.includes('/preview') || window.location.href.includes('/published')) {
+      interactionElement.style.display = 'block !important';
+      interactionElement.style.visibility = 'visible !important';
+      const interactionInner = interactionElement.querySelector('.compare-contrast-interaction');
+      if (interactionInner) {
+        interactionInner.style.display = 'block !important';
+        interactionInner.style.visibility = 'visible !important';
+      }
+    }
+    
     // Append to content area
     activeArea.appendChild(interactionElement);
     
-    // Add event listeners
-    addInteractionControls();
+    // Add event listeners only in editing mode
+    if (!window.location.href.includes('/preview') && !window.location.href.includes('/published')) {
+      addInteractionControls();
+    }
     
     console.log('[Rise Extension] Interaction restored to DOM:', interactionId);
+  }
   }
   
   // Helper function to create interaction HTML
