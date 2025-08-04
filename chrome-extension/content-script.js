@@ -1284,7 +1284,6 @@ function isRiseContentBlock(element) {
           !classNameStr.includes('navigation') &&
           element.getAttribute('data-block-type') !== 'compare-contrast');
 }
-}
 
 function createInsertionZone(referenceBlock, position) {
   const zone = document.createElement('div');
