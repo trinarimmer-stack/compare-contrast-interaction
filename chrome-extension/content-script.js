@@ -715,8 +715,10 @@
       
       // Add event listeners for control buttons - but only in edit mode
       if (!isPreviewMode()) {
-        addInteractionControls();
-        console.log('[Rise Extension] Added interaction controls for edit mode');
+        setTimeout(() => {
+          addInteractionControls();
+          console.log('[Rise Extension] Added interaction controls for edit mode');
+        }, 100);
       }
     } catch (error) {
       console.error('[Rise Extension] Error inserting configured component:', error);
@@ -831,19 +833,11 @@
       return;
     }
     
-    // Find the actual Rise block that contains this interaction (not our container)
-    // Look for the parent that has sparkle-fountain class (actual Rise blocks)
-    // Start from container's parent, not the container itself
-    let riseBlock = container.parentElement;
-    while (riseBlock && riseBlock !== document.body) {
-      console.log(`[Rise Extension] Checking parent:`, riseBlock.className);
-      if (riseBlock.classList.contains('sparkle-fountain')) {
-        break;
-      }
-      riseBlock = riseBlock.parentElement;
-    }
+    // Find the actual Rise block that contains this interaction
+    // Since we now create proper sparkle-fountain blocks, look for the closest one
+    let riseBlock = container.closest('.sparkle-fountain');
     
-    if (!riseBlock || !riseBlock.classList.contains('sparkle-fountain')) {
+    if (!riseBlock) {
       console.log(`[Rise Extension] Could not find containing sparkle-fountain Rise block`);
       console.log(`[Rise Extension] Container parent chain:`, container.parentElement?.className, container.parentElement?.parentElement?.className, container.parentElement?.parentElement?.parentElement?.className);
       window.movementInProgress = false;
@@ -895,6 +889,7 @@
     // Re-attach event listeners after DOM manipulation
     setTimeout(() => {
       addInteractionControls();
+      console.log('[Rise Extension] Re-attached interaction controls after movement');
       window.movementInProgress = false;
     }, 200);
   }
