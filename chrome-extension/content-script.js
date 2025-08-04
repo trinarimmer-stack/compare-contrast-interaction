@@ -811,6 +811,12 @@ class InteractionManager {
     const allSiblings = Array.from(parent.children);
     const currentIndex = allSiblings.indexOf(element);
     
+    console.log('BEFORE MOVE:');
+    console.log('Current index:', currentIndex);
+    console.log('Element classes:', element.className);
+    console.log('Previous sibling:', element.previousElementSibling?.tagName, element.previousElementSibling?.className?.substring(0, 50));
+    console.log('Next sibling:', element.nextElementSibling?.tagName, element.nextElementSibling?.className?.substring(0, 50));
+    
     let targetIndex;
     if (direction === 'up') {
       targetIndex = Math.max(0, currentIndex - 1);
@@ -829,6 +835,8 @@ class InteractionManager {
       allSiblings[targetIndex] : 
       (targetIndex + 1 < allSiblings.length ? allSiblings[targetIndex + 1] : null);
     
+    console.log('Reference element for insertion:', referenceElement?.tagName, referenceElement?.className?.substring(0, 50));
+    
     // Remove element from current position
     element.remove();
     
@@ -838,6 +846,11 @@ class InteractionManager {
     } else {
       parent.appendChild(element);
     }
+    
+    console.log('AFTER MOVE:');
+    console.log('New index:', Array.from(parent.children).indexOf(element));
+    console.log('New previous sibling:', element.previousElementSibling?.tagName, element.previousElementSibling?.className?.substring(0, 50));
+    console.log('New next sibling:', element.nextElementSibling?.tagName, element.nextElementSibling?.className?.substring(0, 50));
     
     this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
   }
