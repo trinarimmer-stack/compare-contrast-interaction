@@ -1489,28 +1489,25 @@
               // Force visibility for blocks inserted between other content
               const riseContainer = insertedBlock.closest('.sparkle-fountain');
               if (riseContainer) {
-                // Override ANY CSS that might be hiding the block
+                // Override ANY CSS that might be hiding the block but maintain document flow
                 riseContainer.style.cssText += `
                   display: block !important;
                   visibility: visible !important;
                   opacity: 1 !important;
-                  position: relative !important;
-                  z-index: 999 !important;
+                  position: static !important;
+                  z-index: auto !important;
                   width: 100% !important;
                   height: auto !important;
                   overflow: visible !important;
-                  transform: none !important;
-                  clip: none !important;
-                  clip-path: none !important;
                 `;
                 
-                // Ensure the interaction content itself is visible
+                // Ensure the interaction content itself is visible but doesn't disrupt layout
                 insertedBlock.style.cssText += `
                   display: block !important;
                   visibility: visible !important;
                   opacity: 1 !important;
-                  position: relative !important;
-                  z-index: 1000 !important;
+                  position: static !important;
+                  z-index: auto !important;
                   width: 100% !important;
                   height: auto !important;
                   min-height: 200px !important;
@@ -1518,6 +1515,7 @@
                   border: 2px solid #007bff !important;
                   margin: 20px 0 !important;
                   padding: 20px !important;
+                  box-sizing: border-box !important;
                 `;
                 
                 // Ensure all parent containers are also visible
@@ -1528,6 +1526,8 @@
                     visibility: visible !important;
                     opacity: 1 !important;
                     overflow: visible !important;
+                    position: static !important;
+                  `;
                   `;
                   parent = parent.parentElement;
                 }
