@@ -1163,17 +1163,10 @@ async function initializeExtension() {
     if (riseIntegration.isAuthoringMode()) {
       console.log('Authoring mode detected');
       
-      // Create and add floating action button
-      const fab = uiManager.createFloatingButton();
-      DOMUtils.addEventListenerSafe(fab, 'click', () => {
-        window.openConfigModal();
-      });
-      document.body.appendChild(fab);
-      
-      // Restore any saved interactions
+      // Restore any saved interactions first
       await interactionManager.restoreAllInteractions();
       
-      // Setup smart insertion system
+      // Setup smart insertion system (replaces floating button)
       setupSmartInsertion();
     } else {
       console.log('Preview mode detected - hiding authoring controls');
@@ -1196,8 +1189,8 @@ function setupSmartInsertion() {
     existingFab.remove();
   }
   
-  // Create insertion zones between content blocks
-  createInsertionZones();
+  // Create insertion zones between content blocks after a delay
+  setTimeout(createInsertionZones, 500);
   
   // Watch for content changes and recreate zones
   const observer = new MutationObserver(() => {
@@ -1457,7 +1450,7 @@ async function insertBlockAtZone(zone) {
     };
     
     // Save the interaction
-    const interactionId = await interactionManager.saveConfiguration(defaultConfig);
+    const interactionId = await StorageManager.saveInteraction(Date.now().toString(), defaultConfig);
     
     // Create the HTML
     const interactionHTML = uiManager.createInteractionHTML(interactionId, defaultConfig);
