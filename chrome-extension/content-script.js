@@ -324,6 +324,7 @@
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
+          min-height: 200px !important;
         }
         
         /* Hide authoring controls in preview mode */
@@ -334,10 +335,27 @@
           display: none !important;
         }
         
-        /* Also hide the custom block button in preview */
+        /* Hide the floating button in preview mode */
+        body[data-rise-mode="preview"] #rise-compare-contrast-fab,
+        body[data-mode="preview"] #rise-compare-contrast-fab,
         body[data-rise-mode="preview"] .compare-contrast-block-btn,
         body[data-mode="preview"] .compare-contrast-block-btn {
           display: none !important;
+        }
+        
+        /* Ensure interactions show in preview mode with specific selectors */
+        .rise-player .compare-contrast-interaction,
+        [data-testid="PreviewModeIndicator"] ~ * .compare-contrast-interaction,
+        body.preview-mode .compare-contrast-interaction,
+        html.preview-mode .compare-contrast-interaction {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          background: #f0f8ff !important;
+          border: 2px solid #0066cc !important;
+          padding: 20px !important;
+          margin: 20px 0 !important;
+          border-radius: 8px !important;
         }
       `;
       document.head.appendChild(css);
@@ -957,6 +975,12 @@
       // Don't show floating button in preview mode
       if (isPreviewMode()) {
         console.log('[Rise Extension] Preview mode detected - hiding floating button');
+        // Remove existing floating button if it exists
+        const existingButton = document.getElementById('rise-compare-contrast-fab');
+        if (existingButton) {
+          existingButton.remove();
+          console.log('[Rise Extension] Removed existing floating button in preview mode');
+        }
         return;
       }
 
@@ -1014,7 +1038,7 @@
     if (isPreviewMode()) {
       console.log('[Rise Extension] Preview mode detected - initializing interactions');
       
-      // Remove any existing floating button in preview mode
+      // Remove any existing floating button in preview mode  
       const floatingButton = document.getElementById('rise-compare-contrast-fab');
       if (floatingButton) {
         floatingButton.remove();
@@ -1024,48 +1048,75 @@
       // Ensure interaction script is loaded
       injectInteractiveScript();
       
-      // Force restore interactions in preview mode with multiple attempts
-      restoreInteractionsFromStorage();
+      // Force restore interactions in preview mode with multiple attempts and better timing
+      setTimeout(() => {
+        console.log('[Rise Extension] First restoration attempt in preview mode');
+        restoreInteractionsFromStorage();
+      }, 1000);
       
-      // Additional attempts with longer delays for preview mode
       setTimeout(() => {
         console.log('[Rise Extension] Second restoration attempt in preview mode');
         restoreInteractionsFromStorage();
+        
+        // Also check for any existing interactions and make them visible
+        const interactions = document.querySelectorAll('.compare-contrast-interaction');
+        console.log(`[Rise Extension] Found ${interactions.length} existing interactions to show in preview`);
+        
+        interactions.forEach(interaction => {
+          // Force visibility in preview mode
+          interaction.style.display = 'block !important';
+          interaction.style.visibility = 'visible !important';
+          interaction.style.opacity = '1 !important';
+          
+          // Hide authoring controls in preview mode
+          const container = interaction.closest('.compare-contrast-container');
+          const controls = container?.querySelector('.interaction-controls');
+          if (controls) {
+            controls.style.display = 'none !important';
+          }
+          
+          // Initialize interactive functionality
+          if (window.initializeCompareContrastInteraction && !interaction.hasAttribute('data-initialized')) {
+            console.log('[Rise Extension] Initializing interaction in preview:', interaction.id);
+            window.initializeCompareContrastInteraction(interaction);
+            interaction.setAttribute('data-initialized', 'true');
+          }
+        });
       }, 3000);
       
       setTimeout(() => {
         console.log('[Rise Extension] Final restoration attempt in preview mode');
         restoreInteractionsFromStorage();
         
-        // Initialize any interactions that are already in the DOM
+        // Final check to ensure all interactions are visible
         const interactions = document.querySelectorAll('.compare-contrast-interaction');
-        console.log(`[Rise Extension] Found ${interactions.length} interactions to initialize in preview`);
+        console.log(`[Rise Extension] Final check: Found ${interactions.length} interactions in preview`);
         
         interactions.forEach(interaction => {
-          // Make sure interaction is visible in preview mode
-          interaction.style.display = 'block';
-          interaction.style.visibility = 'visible';
+          // Ensure visibility with stronger CSS
+          const style = interaction.style;
+          style.setProperty('display', 'block', 'important');
+          style.setProperty('visibility', 'visible', 'important');
+          style.setProperty('opacity', '1', 'important');
+          style.setProperty('min-height', '200px', 'important');
           
-          // Show interaction controls in edit mode, hide in preview mode
-          const container = interaction.closest('.compare-contrast-container');
-          const controls = container?.querySelector('.interaction-controls');
-          if (controls) {
-            if (isPreviewMode()) {
-              controls.style.display = 'none';
-              console.log('[Rise Extension] Hidden interaction controls in preview mode');
-            } else {
-              controls.style.display = 'flex';
-              console.log('[Rise Extension] Showing interaction controls in edit mode');
-            }
+          // Add a background to make it clearly visible
+          if (isPreviewMode()) {
+            style.setProperty('background', '#f0f8ff', 'important');
+            style.setProperty('border', '2px solid #0066cc', 'important');
+            style.setProperty('padding', '20px', 'important');
+            style.setProperty('margin', '20px 0', 'important');
+            style.setProperty('border-radius', '8px', 'important');
           }
           
-          // Trigger initialization of each interaction
-          if (window.initializeCompareContrastInteraction) {
-            console.log('[Rise Extension] Initializing interaction in preview:', interaction.id);
+          // Initialize if not already done
+          if (window.initializeCompareContrastInteraction && !interaction.hasAttribute('data-initialized')) {
+            console.log('[Rise Extension] Final initialization attempt for:', interaction.id);
             window.initializeCompareContrastInteraction(interaction);
+            interaction.setAttribute('data-initialized', 'true');
           }
         });
-      }, 5000);
+      }, 6000);
     } else {
       // Only create floating button in editing mode and restore interactions
       console.log('[Rise Extension] In edit mode - creating floating button and restoring interactions');
@@ -1084,7 +1135,7 @@
   function watchForNavigation() {
     let currentUrl = window.location.href;
     
-    // Watch for URL changes
+    // Watch for URL changes and DOM changes that might indicate mode switches
     const observer = new MutationObserver(() => {
       if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
@@ -1101,11 +1152,56 @@
           }, 1000);
         }
       }
+      
+      // Check for preview mode changes and hide/show floating button accordingly
+      const isCurrentlyPreview = isPreviewMode();
+      const floatingButton = document.getElementById('rise-compare-contrast-fab');
+      
+      if (isCurrentlyPreview && floatingButton) {
+        floatingButton.remove();
+        console.log('[Rise Extension] Removed floating button due to preview mode detection');
+      } else if (!isCurrentlyPreview && !floatingButton && !window.location.href.includes('/preview')) {
+        // Re-create floating button if we're back in edit mode
+        setTimeout(() => {
+          if (!isPreviewMode() && !document.getElementById('rise-compare-contrast-fab')) {
+            const button = document.createElement('div');
+            button.id = 'rise-compare-contrast-fab';
+            
+            const innerButton = document.createElement('button');
+            innerButton.style.cssText = `
+              position: fixed;
+              bottom: 20px;
+              right: 20px;
+              width: 60px;
+              height: 60px;
+              border-radius: 50%;
+              background: #0066cc;
+              color: white;
+              border: none;
+              font-size: 24px;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              z-index: 10000;
+              transition: all 0.3s ease;
+              display: block;
+            `;
+            innerButton.textContent = '📝';
+            innerButton.title = 'Add Compare & Contrast Block';
+            innerButton.addEventListener('click', () => window.openConfigModal());
+            
+            button.appendChild(innerButton);
+            document.body.appendChild(button);
+            console.log('[Rise Extension] Re-created floating button for edit mode');
+          }
+        }, 1000);
+      }
     });
     
     observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'data-testid']
     });
     
     // Also listen for pushstate/popstate events
