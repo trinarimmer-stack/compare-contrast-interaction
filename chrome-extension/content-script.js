@@ -7,14 +7,23 @@
   // Function to check if we're in preview mode - available globally
   function isPreviewMode() {
     const url = window.location.href;
-    const isPreview = url.includes('/preview/') || 
-                     url.includes('?preview=') ||
-                     url.includes('/share/') ||
-                     document.querySelector('[data-testid="PreviewModeIndicator"]') ||
-                     document.body.classList.contains('preview-mode') ||
-                     document.querySelector('.preview-mode') ||
-                     document.querySelector('[class*="preview"]');
-    console.log('[Rise Extension] Preview mode check:', {url, isPreview});
+    
+    // Check URL patterns for actual preview/published content
+    const isPreviewUrl = url.includes('/preview/') || 
+                        url.includes('?preview=') ||
+                        url.includes('/share/') ||
+                        url.includes('/published/') ||
+                        url.includes('/player/');
+    
+    // Check for specific preview mode indicators (not just any preview button)
+    const hasPreviewModeIndicator = document.querySelector('[data-testid="PreviewModeIndicator"]') ||
+                                   document.body.classList.contains('preview-mode') ||
+                                   document.documentElement.classList.contains('preview-mode') ||
+                                   document.querySelector('.rise-player') ||
+                                   !document.querySelector('.blocks-authoring'); // If no authoring interface, likely preview
+    
+    const isPreview = isPreviewUrl || hasPreviewModeIndicator;
+    console.log('[Rise Extension] Preview mode check:', {url, isPreviewUrl, hasPreviewModeIndicator, isPreview});
     return isPreview;
   }
 
