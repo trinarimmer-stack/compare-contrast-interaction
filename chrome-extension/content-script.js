@@ -1207,39 +1207,45 @@ function createInsertionZones() {
   // Find content blocks to create zones between them
   const contentBlocks = findContentBlocks();
   
-  contentBlocks.forEach((block, index) => {
-    // Create zone after each block (except the last one gets a zone before and after)
-    if (index === contentBlocks.length - 1) {
-      createInsertionZone(block, 'after');
-    } else {
-      createInsertionZone(block, 'after');
+  // Only create zones between consecutive blocks, not overlapping
+  for (let i = 0; i < contentBlocks.length - 1; i++) {
+    const currentBlock = contentBlocks[i];
+    const nextBlock = contentBlocks[i + 1];
+    
+    // Check if there's enough space between blocks to insert a zone
+    const currentRect = currentBlock.getBoundingClientRect();
+    const nextRect = nextBlock.getBoundingClientRect();
+    const gap = nextRect.top - (currentRect.top + currentRect.height);
+    
+    // Only create zone if there's a reasonable gap (at least 20px)
+    if (gap >= 20) {
+      createInsertionZone(currentBlock, 'after');
     }
-  });
+  }
   
-  // Create a zone at the very beginning if there are blocks
+  // Create a zone at the very end
   if (contentBlocks.length > 0) {
-    createInsertionZone(contentBlocks[0], 'before');
+    const lastBlock = contentBlocks[contentBlocks.length - 1];
+    createInsertionZone(lastBlock, 'after');
   }
 }
 
 function findContentBlocks() {
-  // Look for various content block patterns
+  // More specific selectors for Rise content blocks
   const selectors = [
-    '.block:not(.compare-contrast-container)',
-    '[class*="block"]:not(.compare-contrast-container)',
-    '[data-block-type]:not([data-block-type="compare-contrast"])',
-    'main > *:not(.insertion-zone):not(.compare-contrast-container)',
-    '.lesson-content > *:not(.insertion-zone):not(.compare-contrast-container)',
-    '.content-area > *:not(.insertion-zone):not(.compare-contrast-container)'
+    '.blocks-authoring .block:not(.compare-contrast-container)',
+    '.lesson-content .block:not(.compare-contrast-container)',
+    '[data-block-type]:not([data-block-type="compare-contrast"]):not(.insertion-zone)'
   ];
   
   const blocks = new Set();
   
   selectors.forEach(selector => {
     document.querySelectorAll(selector).forEach(element => {
-      // Filter out obviously non-content elements
-      if (!isContentBlock(element)) return;
-      blocks.add(element);
+      // Filter out obviously non-content elements and ensure they're actual Rise blocks
+      if (isContentBlock(element) && isRiseContentBlock(element)) {
+        blocks.add(element);
+      }
     });
   });
   
@@ -1251,8 +1257,8 @@ function findContentBlocks() {
 
 function isContentBlock(element) {
   // Skip elements that are clearly not content blocks
-  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE'];
-  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup'];
+  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'HEADER', 'NAV', 'FOOTER'];
+  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup', 'toolbar', 'sidebar', 'navigation'];
   
   if (skipTags.includes(element.tagName)) return false;
   
@@ -1261,9 +1267,23 @@ function isContentBlock(element) {
   const classNameStr = className ? (typeof className === 'string' ? className : className.toString()) : '';
   if (skipClasses.some(cls => classNameStr.includes(cls))) return false;
   
-  if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
+  if (element.offsetWidth < 100 || element.offsetHeight < 50) return false;
   
   return true;
+}
+
+function isRiseContentBlock(element) {
+  // Check if this is actually a Rise content block
+  const className = element.className || '';
+  const classNameStr = typeof className === 'string' ? className : className.toString();
+  
+  // Must have block-related classes AND be mounted (actively displayed)
+  return (classNameStr.includes('block') && 
+          classNameStr.includes('mounted') && 
+          !classNameStr.includes('toolbar') &&
+          !classNameStr.includes('navigation') &&
+          element.getAttribute('data-block-type') !== 'compare-contrast');
+}
 }
 
 function createInsertionZone(referenceBlock, position) {
