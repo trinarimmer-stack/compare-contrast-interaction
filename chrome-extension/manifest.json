@@ -21,8 +21,7 @@
       ],
       "js": ["content-script.js"],
       "css": ["styles.css", "styles-enhanced.css"],
-      "run_at": "document_end",
-      "type": "module"
+      "run_at": "document_end"
     }
   ],
   "background": {
