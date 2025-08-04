@@ -728,6 +728,10 @@ class InteractionManager {
       container.innerHTML = interactionHTML;
       const interactionElement = container.firstElementChild;
       
+      if (!interactionElement) {
+        throw new Error('Failed to create interaction element from HTML');
+      }
+      
       // Add controls for authoring mode
       const riseIntegration = new RiseIntegration();
       if (riseIntegration.isAuthoringMode()) {
