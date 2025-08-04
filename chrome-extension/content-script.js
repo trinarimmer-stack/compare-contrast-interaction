@@ -1017,7 +1017,7 @@
       return;
     }
     
-    // Get all blocks within the lesson content area only
+    // Get all blocks within the lesson content area only - this must match restoration logic
     const allBlocks = Array.from(lessonBody.children);
     
     // Find the exact position by looking for the block containing our interaction
@@ -1419,10 +1419,8 @@
       return;
     }
     
-    // Look for lesson content area within the active area to avoid course header
-    const lessonContent = activeArea.querySelector('[class*="lesson-body"], [class*="lesson-content"], .sparkle-fountain') 
-                         ? activeArea.querySelector('[class*="lesson-body"], [class*="lesson-content"]') || activeArea
-                         : activeArea;
+    // Look for lesson content area within the active area to avoid course header - must match save logic
+    const lessonContent = activeArea.querySelector('[class*="lesson-body"], [class*="blocks"], [class*="sparkle"]') || activeArea;
     
     console.log('[Rise Extension] Restoring interaction to area:', activeArea.className);
     
