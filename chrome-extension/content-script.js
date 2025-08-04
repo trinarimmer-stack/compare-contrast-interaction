@@ -1079,12 +1079,16 @@ window.deleteInteraction = (interactionId) => {
 
 // Main initialization function
 async function initializeExtension() {
+  console.log('Initializing Compare & Contrast Extension');
+  
   try {
-    console.log('Initializing Compare & Contrast Extension');
-    
-    // Wait for Rise to load
+    // Wait for Rise to load (this should never throw an error now)
     await riseIntegration.waitForRise();
-    
+  } catch (error) {
+    console.log('Rise detection had an issue, but continuing anyway:', error.message);
+  }
+  
+  try {
     // Inject custom styles
     await riseIntegration.injectCustomStyles();
     
@@ -1110,7 +1114,8 @@ async function initializeExtension() {
     
     console.log('Extension initialized successfully');
   } catch (error) {
-    console.error('Error initializing extension:', error);
+    console.error('Error during extension setup:', error);
+    // Continue anyway - don't let setup errors prevent basic functionality
   }
 }
 
