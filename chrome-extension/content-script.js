@@ -19,8 +19,7 @@
     const hasPreviewModeIndicator = document.querySelector('[data-testid="PreviewModeIndicator"]') ||
                                    document.body.classList.contains('preview-mode') ||
                                    document.documentElement.classList.contains('preview-mode') ||
-                                   document.querySelector('.rise-player') ||
-                                   !document.querySelector('.blocks-authoring'); // If no authoring interface, likely preview
+                                   document.querySelector('.rise-player');
     
     const isPreview = isPreviewUrl || hasPreviewModeIndicator;
     console.log('[Rise Extension] Preview mode check:', {url, isPreviewUrl, hasPreviewModeIndicator, isPreview});
