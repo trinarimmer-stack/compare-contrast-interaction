@@ -4,6 +4,20 @@
 (function() {
   'use strict';
 
+  // Function to check if we're in preview mode - available globally
+  function isPreviewMode() {
+    const url = window.location.href;
+    const isPreview = url.includes('/preview/') || 
+                     url.includes('?preview=') ||
+                     url.includes('/share/') ||
+                     document.querySelector('[data-testid="PreviewModeIndicator"]') ||
+                     document.body.classList.contains('preview-mode') ||
+                     document.querySelector('.preview-mode') ||
+                     document.querySelector('[class*="preview"]');
+    console.log('[Rise Extension] Preview mode check:', {url, isPreview});
+    return isPreview;
+  }
+
   // Wait for Rise interface to load
   function waitForRise() {
     return new Promise((resolve) => {
@@ -495,20 +509,6 @@
     
     window.insertingInteraction = true;
     
-    // Function to check if we're in preview mode
-    function isPreviewMode() {
-      const url = window.location.href;
-      const isPreview = url.includes('/preview/') || 
-                       url.includes('?preview=') ||
-                       url.includes('/share/') ||
-                       document.querySelector('[data-testid="PreviewModeIndicator"]') ||
-                       document.body.classList.contains('preview-mode') ||
-                       document.querySelector('.preview-mode') ||
-                       document.querySelector('[class*="preview"]');
-      console.log('[Rise Extension] Preview mode check:', {url, isPreview});
-      return isPreview;
-    }
-
     // Store the configuration globally so the injected script can access it
     window.compareContrastConfig = { activityInstructions, prompt, idealResponse: ideal, placeholder };
     // Generate unique ID for this interaction
