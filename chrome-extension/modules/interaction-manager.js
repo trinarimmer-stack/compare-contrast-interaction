@@ -86,7 +86,7 @@ export class InteractionManager {
       }
 
       // Find insertion point
-      const insertionPoint = targetElement || this.findInsertionPoint();
+      const insertionPoint = targetElement || await this.findInsertionPoint();
       if (!insertionPoint) {
         this.uiManager.showToast('Could not find suitable insertion point', 'error');
         return false;
@@ -326,13 +326,22 @@ export class InteractionManager {
     }
   }
 
-  findInsertionPoint() {
-    // Try to find a suitable insertion point in the lesson content
+  async findInsertionPoint() {
+    // Use Rise integration to find proper insertion point
+    if (window.riseIntegration) {
+      const insertionPoint = await window.riseIntegration.findBlockInsertionPoint();
+      if (insertionPoint) {
+        return insertionPoint;
+      }
+    }
+
+    // Fallback to basic selectors if Rise integration isn't available
     const selectors = [
       '.lesson-content .block:last-child',
-      '.lesson-body .block:last-child',
+      '.lesson-body .block:last-child', 
       '.content-area .block:last-child',
-      '.main-content .block:last-child'
+      '.main-content .block:last-child',
+      '[data-testid="lesson-content"] .block:last-child'
     ];
 
     for (const selector of selectors) {
@@ -381,7 +390,7 @@ export class InteractionManager {
       }
 
       // Find insertion point
-      const insertionPoint = this.findInsertionPoint();
+      const insertionPoint = await this.findInsertionPoint();
       if (!insertionPoint) {
         return;
       }
