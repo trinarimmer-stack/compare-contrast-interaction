@@ -1191,49 +1191,56 @@
     
     const interactionHtml = createInteractionHTML(interactionId, encodedConfigData, prompt, idealResponse, placeholder);
     
-    // Create a temporary container to parse the HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = interactionHtml;
-    const interactionElement = tempDiv.firstElementChild;
+    // Create proper Rise block structure (same as new insertions)
+    const riseBlockContainer = document.createElement('div');
+    riseBlockContainer.className = 'sparkle-fountain block block--mounted block--playback-mode-slides block--unlinked';
+    riseBlockContainer.setAttribute('data-block-id', `interaction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
     
-    // Ensure visibility in preview mode
-    if (window.location.href.includes('/preview') || window.location.href.includes('/published')) {
-      interactionElement.style.display = 'block !important';
-      interactionElement.style.visibility = 'visible !important';
-      const interactionInner = interactionElement.querySelector('.compare-contrast-interaction');
-      if (interactionInner) {
-        interactionInner.style.display = 'block !important';
-        interactionInner.style.visibility = 'visible !important';
-      }
-    }
+    const blockAnimationWrapper = document.createElement('div');
+    blockAnimationWrapper.className = 'block__animation-wrapper';
     
-    // IMPORTANT: Properly insert using the same method as new interactions
-    // Find existing blocks to insert after
-    const existingBlocks = activeArea.querySelectorAll('.block__inner');
-    const existingBlocksArray = Array.from(existingBlocks);
+    const blockWrap = document.createElement('div');
+    blockWrap.className = 'block__wrap block__wrap--playback-mode-slides';
     
-    if (existingBlocksArray.length > 0) {
-      // Insert after the last existing block
-      const lastBlock = existingBlocksArray[existingBlocksArray.length - 1];
-      const insertionPoint = lastBlock.closest('.sparkle-fountain') || lastBlock.parentElement;
-      
-      if (insertionPoint && insertionPoint.parentElement) {
-        insertionPoint.parentElement.insertBefore(interactionElement, insertionPoint.nextSibling);
-        console.log('[Rise Extension] Restored interaction inserted after existing block');
-      } else {
-        // Fallback: append to content area
-        activeArea.appendChild(interactionElement);
-        console.log('[Rise Extension] Restored interaction appended to content area');
-      }
+    const blockContent = document.createElement('div');
+    blockContent.className = 'block__content';
+    
+    const blockWrapper = document.createElement('div');
+    blockWrapper.className = 'block-wrapper bg bg--range-light bg--type-light';
+    
+    const blockInner = document.createElement('div');
+    blockInner.className = 'block__inner';
+    
+    // Create the interaction container and add our interaction
+    const container = document.createElement('div');
+    container.innerHTML = interactionHtml;
+    const interactionElement = container.firstElementChild;
+    blockInner.appendChild(interactionElement);
+    
+    // Build the proper Rise block hierarchy
+    blockWrapper.appendChild(blockInner);
+    blockContent.appendChild(blockWrapper);
+    blockWrap.appendChild(blockContent);
+    blockAnimationWrapper.appendChild(blockWrap);
+    riseBlockContainer.appendChild(blockAnimationWrapper);
+    
+    // Insert the complete block structure
+    const existingSparkleBlocks = activeArea.querySelectorAll('.sparkle-fountain.block');
+    if (existingSparkleBlocks.length > 0) {
+      const lastSparkleBlock = existingSparkleBlocks[existingSparkleBlocks.length - 1];
+      activeArea.insertBefore(riseBlockContainer, lastSparkleBlock.nextSibling);
+      console.log('[Rise Extension] Restored interaction inserted after existing sparkle-fountain block');
     } else {
-      // No existing blocks, append to content area
-      activeArea.appendChild(interactionElement);
-      console.log('[Rise Extension] Restored interaction appended to empty content area');
+      activeArea.appendChild(riseBlockContainer);
+      console.log('[Rise Extension] Restored interaction appended to content area');
     }
     
-    // Add event listeners only in editing mode
-    if (!window.location.href.includes('/preview') && !window.location.href.includes('/published')) {
-      addInteractionControls();
+    // Add event listeners for controls in editing mode
+    if (!isPreviewMode()) {
+      setTimeout(() => {
+        addInteractionControls();
+        console.log('[Rise Extension] Added controls to restored interaction');
+      }, 100);
     }
     
     console.log('[Rise Extension] Interaction restored to DOM:', interactionId);
