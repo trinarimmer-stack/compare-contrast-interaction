@@ -1425,10 +1425,23 @@
       // In preview mode, ensure interaction is visible and functional
       const interactionDiv = riseBlockContainer.querySelector('.compare-contrast-interaction');
       if (interactionDiv) {
-        interactionDiv.style.display = 'block';
-        interactionDiv.style.visibility = 'visible';
-        interactionDiv.style.opacity = '1';
-        interactionDiv.style.minHeight = '200px';
+        // Override all potential hiding styles with !important
+        interactionDiv.style.setProperty('display', 'block', 'important');
+        interactionDiv.style.setProperty('visibility', 'visible', 'important');
+        interactionDiv.style.setProperty('opacity', '1', 'important');
+        interactionDiv.style.setProperty('position', 'relative', 'important');
+        interactionDiv.style.setProperty('z-index', '1', 'important');
+        interactionDiv.style.setProperty('min-height', '200px', 'important');
+        
+        // Remove editor-specific styling that might hide content in preview
+        interactionDiv.style.setProperty('border', '1px solid #e5e7eb', 'important');
+        interactionDiv.style.setProperty('background', 'white', 'important');
+        interactionDiv.style.setProperty('border-radius', '8px', 'important');
+        interactionDiv.style.setProperty('padding', '24px', 'important');
+        interactionDiv.style.setProperty('margin', '20px 0', 'important');
+        interactionDiv.style.setProperty('box-shadow', '0 1px 3px rgba(0,0,0,0.1)', 'important');
+        
+        console.log('[Rise Extension] Applied preview mode styling to interaction');
         
         // Initialize interaction functionality in preview mode
         setTimeout(() => {
