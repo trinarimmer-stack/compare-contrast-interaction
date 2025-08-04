@@ -1127,18 +1127,6 @@
     
     return null;
   }
-  function restoreInteractionToDOM(interactionId, config) {
-    const { activityInstructions, prompt, idealResponse, placeholder } = config;
-    
-    // Find suitable content area for restoration - use the same logic as insertion
-    const activeArea = findActiveContentArea();
-    if (!activeArea) {
-      console.log('[Rise Extension] Could not find content area for restoration, retrying...');
-      // Retry after a delay
-      setTimeout(() => restoreInteractionToDOM(interactionId, config), 1000);
-      return;
-    }
-    
   // Function to restore a single interaction to the DOM
   function restoreInteractionToDOM(interactionId, config) {
     const { activityInstructions, prompt, idealResponse, placeholder } = config;
