@@ -1475,32 +1475,75 @@
           setTimeout(() => {
             const insertedBlock = document.getElementById(interactionId);
             if (insertedBlock) {
+              console.log('[Rise Extension] Applying aggressive visibility fixes for mid-content positioning');
+              
               // Force visibility for blocks inserted between other content
               const riseContainer = insertedBlock.closest('.sparkle-fountain');
               if (riseContainer) {
+                // Override ANY CSS that might be hiding the block
                 riseContainer.style.cssText += `
                   display: block !important;
                   visibility: visible !important;
                   opacity: 1 !important;
                   position: relative !important;
-                  z-index: 1 !important;
+                  z-index: 999 !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                  transform: none !important;
+                  clip: none !important;
+                  clip-path: none !important;
                 `;
                 
-                // Ensure parent containers are also visible
+                // Ensure the interaction content itself is visible
+                insertedBlock.style.cssText += `
+                  display: block !important;
+                  visibility: visible !important;
+                  opacity: 1 !important;
+                  position: relative !important;
+                  z-index: 1000 !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  min-height: 200px !important;
+                  background: white !important;
+                  border: 2px solid #007bff !important;
+                  margin: 20px 0 !important;
+                  padding: 20px !important;
+                `;
+                
+                // Ensure all parent containers are also visible
                 let parent = riseContainer.parentElement;
-                while (parent && parent !== activeArea) {
+                while (parent && parent !== document.body) {
                   parent.style.cssText += `
                     display: block !important;
                     visibility: visible !important;
                     opacity: 1 !important;
+                    overflow: visible !important;
                   `;
                   parent = parent.parentElement;
                 }
                 
-                console.log('[Rise Extension] Applied visibility fixes for mid-content positioning');
+                console.log('[Rise Extension] Applied aggressive visibility overrides');
               }
             }
           }, 100);
+          
+          // Additional check after a longer delay
+          setTimeout(() => {
+            const insertedBlock = document.getElementById(interactionId);
+            if (insertedBlock) {
+              const isVisible = insertedBlock.offsetParent !== null && 
+                               insertedBlock.offsetWidth > 0 && 
+                               insertedBlock.offsetHeight > 0;
+              console.log(`[Rise Extension] Final visibility check for ${interactionId}: ${isVisible}`);
+              
+              if (!isVisible) {
+                console.log('[Rise Extension] Block still not visible, investigating...');
+                console.log('Block styles:', window.getComputedStyle(insertedBlock));
+                console.log('Container styles:', window.getComputedStyle(insertedBlock.closest('.sparkle-fountain')));
+              }
+            }
+          }, 1000);
         }
       } else {
         activeArea.appendChild(riseBlockContainer);
