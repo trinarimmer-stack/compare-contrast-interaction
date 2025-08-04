@@ -9,7 +9,7 @@
     const url = window.location.href;
     
     // Check URL patterns for actual preview/published content
-    const isPreviewUrl = url.includes('/preview/') || 
+    const isPreviewUrl = url.includes('/preview') || // Fixed: removed trailing slash requirement
                         url.includes('?preview=') ||
                         url.includes('/share/') ||
                         url.includes('/published/') ||
@@ -39,6 +39,7 @@
     // Check if we're in a preview iframe or specific preview context
     const isInPreviewContext = window.top !== window.self || // In iframe
                               document.querySelector('iframe[src*="preview"]') ||
+                              document.querySelector('iframe.preview-content__frame') || // Found in logs
                               document.title.toLowerCase().includes('preview') ||
                               document.querySelector('[data-testid*="PreviewFrame"]');
     
