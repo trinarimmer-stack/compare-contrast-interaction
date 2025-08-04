@@ -1694,7 +1694,7 @@
       <div class="block block--mounted block--playback-mode-slides compare-contrast-container" 
            style="position: relative; margin: 20px 0;" 
            data-block-type="compare-contrast">
-        <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 1000; display: flex; gap: 5px;">
+        <div class="interaction-controls" style="position: absolute; top: -10px; right: 0; z-index: 10002; display: flex; gap: 5px;">
           <button class="edit-btn" data-interaction-id="${interactionId}" style="background: #28a745; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Edit">✏️</button>
           <button class="move-up-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Up">↑</button>
           <button class="move-down-btn" data-interaction-id="${interactionId}" style="background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-size: 12px; cursor: pointer;" title="Move Down">↓</button>
