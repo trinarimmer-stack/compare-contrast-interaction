@@ -913,9 +913,6 @@
       // Don't show floating button in preview mode
       if (isPreviewMode()) {
         console.log('[Rise Extension] Preview mode detected - hiding floating button');
-        // Also remove any existing floating buttons
-        const existingButtons = document.querySelectorAll('.compare-contrast-block-btn');
-        existingButtons.forEach(btn => btn.remove());
         return;
       }
 
@@ -977,13 +974,12 @@
     if (isPreviewMode()) {
       console.log('[Rise Extension] Preview mode detected - initializing interactions');
       
-      // Hide any floating buttons that might have appeared
-      const floatingButtons = document.querySelectorAll('.compare-contrast-block-btn');
-      floatingButtons.forEach(btn => {
-        btn.style.display = 'none';
-        btn.remove();
-        console.log('[Rise Extension] Removed floating button from preview mode');
-      });
+      // Hide floating button in preview mode
+      const floatingButton = document.getElementById('rise-compare-contrast-fab');
+      if (floatingButton) {
+        floatingButton.style.display = 'none';
+        console.log('[Rise Extension] Hidden floating button in preview mode');
+      }
       
       // Ensure interaction script is loaded
       injectInteractiveScript();
@@ -1010,11 +1006,14 @@
           interaction.style.display = 'block';
           interaction.style.visibility = 'visible';
           
-          // Hide edit controls in preview mode
-          const controls = interaction.closest('.compare-contrast-container')?.querySelector('.interaction-controls');
-          if (controls) {
+          // Hide edit controls in preview mode only
+          const container = interaction.closest('.compare-contrast-container');
+          const controls = container?.querySelector('.interaction-controls');
+          if (controls && isPreviewMode()) {
             controls.style.display = 'none';
             console.log('[Rise Extension] Hidden interaction controls in preview mode');
+          } else if (controls) {
+            controls.style.display = 'flex';
           }
           
           // Trigger initialization of each interaction
