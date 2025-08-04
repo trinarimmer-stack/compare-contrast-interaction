@@ -353,9 +353,22 @@ class UIManager {
   createInteractionHTML(interactionId, config) {
     return `
       <div class="block block--mounted block--playbook-mode-slides compare-contrast-container" 
-           style="position: relative; margin: 20px 0; padding: 20px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa;" 
+           style="position: relative; margin: 20px 0; padding: 20px; border: 2px solid #007bff; border-radius: 8px; background: #f8f9fa;" 
            data-block-type="compare-contrast"
            data-interaction-id="${interactionId}">
+        <div class="compare-contrast-content" style="min-height: 100px;">
+          <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px; font-weight: 600;">
+            ${config.title || 'Compare & Contrast'}
+          </h3>
+          <div style="background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">
+              ${config.prompt || 'Compare and contrast exercise'}
+            </p>
+            <div style="min-height: 60px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 10px; margin-top: 10px;">
+              <em style="color: #999; font-size: 13px;">Interactive content will load here during playback</em>
+            </div>
+          </div>
+        </div>
         <div data-compare-contrast-interaction
              data-title="${config.title || 'Compare & Contrast'}"
              data-prompt="${config.prompt || ''}"
