@@ -999,16 +999,29 @@
   // Function to save interaction position in localStorage
   function saveInteractionPosition(interactionId) {
     const riseBlock = document.getElementById(interactionId)?.closest('.sparkle-fountain');
-    if (!riseBlock) return;
+    if (!riseBlock) {
+      console.log(`[Rise Extension] Could not find rise block for ${interactionId}`);
+      return;
+    }
     
     const contentArea = riseBlock.closest('.lesson-content, .content-area, [class*="content"]');
-    if (!contentArea) return;
+    if (!contentArea) {
+      console.log(`[Rise Extension] Could not find content area for ${interactionId}`);
+      return;
+    }
     
-    const allBlocks = Array.from(contentArea.children).filter(child => 
-      child.classList.contains('sparkle-fountain') || child.classList.contains('block')
-    );
+    // Get all blocks including both sparkle-fountain and regular blocks
+    const allBlocks = Array.from(contentArea.children);
     
-    const currentIndex = allBlocks.indexOf(riseBlock);
+    // Find the exact position by looking for the block containing our interaction
+    let currentIndex = -1;
+    for (let i = 0; i < allBlocks.length; i++) {
+      if (allBlocks[i].contains(riseBlock) || allBlocks[i] === riseBlock) {
+        currentIndex = i;
+        break;
+      }
+    }
+    
     if (currentIndex !== -1) {
       // Update the config in localStorage with position
       const storageKey = `rise-interaction-${interactionId}`;
@@ -1016,9 +1029,12 @@
       if (existingConfig) {
         const config = JSON.parse(existingConfig);
         config.blockPosition = currentIndex;
+        config.totalBlocks = allBlocks.length;
         localStorage.setItem(storageKey, JSON.stringify(config));
-        console.log(`[Rise Extension] Saved position ${currentIndex} for interaction ${interactionId}`);
+        console.log(`[Rise Extension] Saved position ${currentIndex}/${allBlocks.length} for interaction ${interactionId}`);
       }
+    } else {
+      console.log(`[Rise Extension] Could not determine position for ${interactionId}`);
     }
   }
 
@@ -1438,19 +1454,54 @@
     riseBlockContainer.appendChild(blockAnimationWrapper);
     
     // Insert the complete block structure at the saved position
-    const savedPosition = config.blockPosition || 'bottom';
-    const allBlocks = activeArea.querySelectorAll('.sparkle-fountain.block, .block');
+    const savedPosition = config.blockPosition;
+    const allContentBlocks = Array.from(activeArea.children);
     
-    if (savedPosition === 'bottom' || savedPosition >= allBlocks.length) {
+    console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks`);
+    
+    if (savedPosition === undefined || savedPosition === 'bottom' || savedPosition >= allContentBlocks.length) {
       // Insert at the end
       activeArea.appendChild(riseBlockContainer);
-      console.log('[Rise Extension] Restored interaction appended to content area');
+      console.log('[Rise Extension] Restored interaction appended to content area (end position)');
     } else {
       // Insert at the specific position
       const targetIndex = Math.max(0, parseInt(savedPosition));
-      if (allBlocks[targetIndex]) {
-        activeArea.insertBefore(riseBlockContainer, allBlocks[targetIndex]);
+      if (allContentBlocks[targetIndex]) {
+        activeArea.insertBefore(riseBlockContainer, allContentBlocks[targetIndex]);
         console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex}`);
+        
+        // In preview mode, ensure the block and its contents are visible
+        if (isPreviewMode()) {
+          setTimeout(() => {
+            const insertedBlock = document.getElementById(interactionId);
+            if (insertedBlock) {
+              // Force visibility for blocks inserted between other content
+              const riseContainer = insertedBlock.closest('.sparkle-fountain');
+              if (riseContainer) {
+                riseContainer.style.cssText += `
+                  display: block !important;
+                  visibility: visible !important;
+                  opacity: 1 !important;
+                  position: relative !important;
+                  z-index: 1 !important;
+                `;
+                
+                // Ensure parent containers are also visible
+                let parent = riseContainer.parentElement;
+                while (parent && parent !== activeArea) {
+                  parent.style.cssText += `
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                  `;
+                  parent = parent.parentElement;
+                }
+                
+                console.log('[Rise Extension] Applied visibility fixes for mid-content positioning');
+              }
+            }
+          }, 100);
+        }
       } else {
         activeArea.appendChild(riseBlockContainer);
         console.log('[Rise Extension] Position not found, appended to content area');
