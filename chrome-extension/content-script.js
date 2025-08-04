@@ -1222,6 +1222,9 @@ async function initializeExtension() {
       
       // Initialize Rise Block Library integration instead of insertion zones
       await initializeBlockLibraryIntegration();
+      
+      // Add fallback floating button for immediate usability
+      createFallbackFloatingButton();
     } else {
       console.log('📖 Preview mode detected - hiding authoring controls');
     }
@@ -1452,7 +1455,22 @@ async function findLessonContentInsertionPoint() {
 
 // Old insertion zone functions removed - replaced with Block Library integration
 
-// All legacy insertion zone functions removed - replaced with Block Library integration
+// Fallback floating button for immediate usability
+function createFallbackFloatingButton() {
+  // Remove any existing floating button
+  const existing = document.querySelector('.rise-compare-contrast-fab');
+  if (existing) existing.remove();
+  
+  const button = uiManager.createFloatingButton();
+  
+  button.addEventListener('click', async () => {
+    console.log('🔵 Fallback floating button clicked');
+    await window.insertCompareContrastBlock();
+  });
+  
+  document.body.appendChild(button);
+  console.log('✅ Fallback floating button created');
+}
 
 // Navigation change handler
 function handleNavigationChange() {
