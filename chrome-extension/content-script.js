@@ -869,7 +869,6 @@ class InteractionManager {
     
     this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
   }
-  }
 
   findInsertionPoint() {
     // Try multiple strategies to find where to insert the block
