@@ -20,8 +20,9 @@
         "*://*.rise.com/author/*"
       ],
       "js": ["content-script.js"],
-      "css": ["styles.css"],
-      "run_at": "document_end"
+      "css": ["styles.css", "styles-enhanced.css"],
+      "run_at": "document_end",
+      "type": "module"
     }
   ],
   "background": {
