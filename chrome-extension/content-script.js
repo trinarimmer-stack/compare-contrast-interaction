@@ -721,15 +721,10 @@ class InteractionManager {
         throw new Error('Could not find suitable insertion point');
       }
 
-      const interactionHTML = this.uiManager.createInteractionHTML(interactionId, config);
-      
-      // Create container and insert
-      const container = document.createElement('div');
-      container.innerHTML = interactionHTML;
-      const interactionElement = container.firstElementChild;
+      const interactionElement = this.uiManager.createInteractionHTML(interactionId, config);
       
       if (!interactionElement) {
-        throw new Error('Failed to create interaction element from HTML');
+        throw new Error('Failed to create interaction element');
       }
       
       // Add controls for authoring mode
@@ -1018,11 +1013,7 @@ class InteractionManager {
     // Find insertion point and create interaction
     const insertionPoint = this.findInsertionPoint();
     if (insertionPoint) {
-      const interactionHTML = this.uiManager.createInteractionHTML(interactionId, config);
-      
-      const container = document.createElement('div');
-      container.innerHTML = interactionHTML;
-      const interactionElement = container.firstElementChild;
+      const interactionElement = this.uiManager.createInteractionHTML(interactionId, config);
       
       // Add controls for authoring mode
       const riseIntegration = new RiseIntegration();
