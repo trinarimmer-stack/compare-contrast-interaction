@@ -1010,8 +1010,15 @@
       return;
     }
     
-    // Get all blocks including both sparkle-fountain and regular blocks
-    const allBlocks = Array.from(contentArea.children);
+    // Make sure we're in the actual lesson content, not the course header area
+    const lessonBody = contentArea.querySelector('[class*="lesson-body"], [class*="blocks"], [class*="sparkle"]') || contentArea;
+    if (!lessonBody) {
+      console.log(`[Rise Extension] Could not find lesson body for ${interactionId}`);
+      return;
+    }
+    
+    // Get all blocks within the lesson content area only
+    const allBlocks = Array.from(lessonBody.children);
     
     // Find the exact position by looking for the block containing our interaction
     let currentIndex = -1;
@@ -1404,14 +1411,18 @@
   function restoreInteractionToDOM(interactionId, config) {
     const { activityInstructions, prompt, idealResponse, placeholder } = config;
     
-    // Find suitable content area for restoration - use the same logic as insertion
+    // Find suitable content area for restoration - but ensure we're in lesson content, not course header
     const activeArea = findActiveContentArea();
     if (!activeArea) {
       console.log('[Rise Extension] Could not find content area for restoration, retrying...');
-      // Retry after a delay
       setTimeout(() => restoreInteractionToDOM(interactionId, config), 1000);
       return;
     }
+    
+    // Look for lesson content area within the active area to avoid course header
+    const lessonContent = activeArea.querySelector('[class*="lesson-body"], [class*="lesson-content"], .sparkle-fountain') 
+                         ? activeArea.querySelector('[class*="lesson-body"], [class*="lesson-content"]') || activeArea
+                         : activeArea;
     
     console.log('[Rise Extension] Restoring interaction to area:', activeArea.className);
     
@@ -1453,22 +1464,22 @@
     blockAnimationWrapper.appendChild(blockWrap);
     riseBlockContainer.appendChild(blockAnimationWrapper);
     
-    // Insert the complete block structure at the saved position
+    // Insert the complete block structure at the saved position within lesson content
     const savedPosition = config.blockPosition;
-    const allContentBlocks = Array.from(activeArea.children);
+    const allContentBlocks = Array.from(lessonContent.children);
     
-    console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks`);
+    console.log(`[Rise Extension] Restoring interaction at position ${savedPosition} out of ${allContentBlocks.length} total blocks in lesson content`);
     
     if (savedPosition === undefined || savedPosition === 'bottom' || savedPosition >= allContentBlocks.length) {
-      // Insert at the end
-      activeArea.appendChild(riseBlockContainer);
-      console.log('[Rise Extension] Restored interaction appended to content area (end position)');
+      // Insert at the end of lesson content
+      lessonContent.appendChild(riseBlockContainer);
+      console.log('[Rise Extension] Restored interaction appended to lesson content (end position)');
     } else {
-      // Insert at the specific position
+      // Insert at the specific position within lesson content
       const targetIndex = Math.max(0, parseInt(savedPosition));
       if (allContentBlocks[targetIndex]) {
-        activeArea.insertBefore(riseBlockContainer, allContentBlocks[targetIndex]);
-        console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex}`);
+        lessonContent.insertBefore(riseBlockContainer, allContentBlocks[targetIndex]);
+        console.log(`[Rise Extension] Restored interaction inserted at position ${targetIndex} in lesson content`);
         
         // In preview mode, ensure the block and its contents are visible
         if (isPreviewMode()) {
@@ -1513,7 +1524,7 @@
                 
                 // Ensure all parent containers are also visible
                 let parent = riseContainer.parentElement;
-                while (parent && parent !== document.body) {
+                while (parent && parent !== lessonContent) {
                   parent.style.cssText += `
                     display: block !important;
                     visibility: visible !important;
