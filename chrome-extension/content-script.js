@@ -796,8 +796,7 @@ class InteractionManager {
         throw new Error('Failed to create interaction element from HTML');
       }
       
-      // Add controls for authoring mode
-      const riseIntegration = new RiseIntegration();
+      // Use the global riseIntegration instance instead of creating new one
       if (riseIntegration.isAuthoringMode()) {
         this.addInteractionControls(interactionElement, interactionId);
       }
@@ -1137,8 +1136,7 @@ class InteractionManager {
       container.innerHTML = interactionHTML;
       const interactionElement = container.firstElementChild;
       
-      // Add controls for authoring mode
-      const riseIntegration = new RiseIntegration();
+      // Use the global riseIntegration instance instead of creating new one
       if (riseIntegration.isAuthoringMode()) {
         this.addInteractionControls(interactionElement, interactionId);
       }
