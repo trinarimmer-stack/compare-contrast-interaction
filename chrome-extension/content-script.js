@@ -258,10 +258,10 @@ class UIManager {
       return btn;
     };
 
-    controls.appendChild(createButton('Edit', '#4CAF50', () => window.editInteraction(interactionId)));
-    controls.appendChild(createButton('↑', '#2196F3', () => this.moveInteraction(interactionId, 'up')));
-    controls.appendChild(createButton('↓', '#2196F3', () => this.moveInteraction(interactionId, 'down')));
-    controls.appendChild(createButton('Delete', '#f44336', () => this.deleteInteraction(interactionId)));
+    controls.appendChild(createButton('✏️', '#4CAF50', () => window.editInteraction(interactionId)));
+    controls.appendChild(createButton('↑', '#2196F3', () => window.moveInteraction && window.moveInteraction(interactionId, 'up')));
+    controls.appendChild(createButton('↓', '#2196F3', () => window.moveInteraction && window.moveInteraction(interactionId, 'down')));
+    controls.appendChild(createButton('🗑️', '#f44336', () => window.deleteInteraction && window.deleteInteraction(interactionId)));
 
     return controls;
   }
@@ -350,13 +350,15 @@ class UIManager {
   }
 
   createInteractionHTML(interactionId, config) {
-    return `
-      <div class="compare-contrast-interaction" 
-           data-interaction-id="${interactionId}"
-           data-title="${config.title || 'Compare & Contrast'}"
-           data-prompt="${config.prompt || ''}"
-           data-ideal-response="${config.idealResponse || ''}"
-           data-placeholder="${config.placeholder || 'Type your response here...'}">
+    const container = document.createElement('div');
+    container.className = 'compare-contrast-interaction';
+    container.setAttribute('data-interaction-id', interactionId);
+    container.setAttribute('data-title', config.title || 'Compare & Contrast');
+    container.setAttribute('data-prompt', config.prompt || '');
+    container.setAttribute('data-ideal-response', config.idealResponse || '');
+    container.setAttribute('data-placeholder', config.placeholder || 'Type your response here...');
+    
+    container.innerHTML = `
         <div class="interaction-content">
           <h3>${config.title || 'Compare & Contrast'}</h3>
           <p>${config.prompt || ''}</p>
@@ -367,8 +369,9 @@ class UIManager {
           </div>
           <button class="show-ideal-btn">Show Ideal Response</button>
         </div>
-      </div>
     `;
+    
+    return container;
   }
 
   showToast(message, type = 'info') {
@@ -441,18 +444,20 @@ class RiseIntegration {
     };
   }
 
-  async waitForRise(timeout = 30000) {
+  async waitForRise(timeout = 10000) {
     const startTime = Date.now();
     
     while (Date.now() - startTime < timeout) {
-      if (this.checkForRiseElements()) {
-        console.log('Rise elements detected');
+      if (this.checkForRiseElements() || document.readyState === 'complete') {
+        console.log('Rise elements detected or page loaded');
         return true;
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    throw new Error('Rise authoring environment not detected within timeout');
+    // Don't throw error, just continue - be more lenient
+    console.log('Rise detection timeout, continuing anyway');
+    return true;
   }
 
   checkForRiseElements() {
@@ -666,6 +671,30 @@ class InteractionManager {
     this.uiManager.showToast('Interaction deleted successfully', 'success');
   }
 
+  addInteractionControls(container, interactionId) {
+    // Remove any existing controls
+    const existingControls = container.querySelector('.rise-compare-contrast-controls');
+    if (existingControls) {
+      existingControls.remove();
+    }
+    
+    const controls = this.uiManager.createInteractionControls(interactionId);
+    container.style.position = 'relative';
+    container.appendChild(controls);
+    this.addControlEventListeners(controls, interactionId);
+    
+    // Show controls on hover
+    container.addEventListener('mouseenter', () => {
+      controls.style.opacity = '1';
+      controls.style.visibility = 'visible';
+    });
+    
+    container.addEventListener('mouseleave', () => {
+      controls.style.opacity = '0';
+      controls.style.visibility = 'hidden';
+    });
+  }
+
   generateInteractionId() {
     return 'interaction_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
@@ -689,10 +718,7 @@ class InteractionManager {
       // Add controls for authoring mode
       const riseIntegration = new RiseIntegration();
       if (riseIntegration.isAuthoringMode()) {
-        const controls = this.uiManager.createInteractionControls(interactionId);
-        interactionElement.style.position = 'relative';
-        interactionElement.appendChild(controls);
-        this.addControlEventListeners(controls, interactionId);
+        this.addInteractionControls(interactionElement, interactionId);
       }
       
       // Insert into DOM
@@ -984,10 +1010,7 @@ class InteractionManager {
       // Add controls for authoring mode
       const riseIntegration = new RiseIntegration();
       if (riseIntegration.isAuthoringMode()) {
-        const controls = this.uiManager.createInteractionControls(interactionId);
-        interactionElement.style.position = 'relative';
-        interactionElement.appendChild(controls);
-        this.addControlEventListeners(controls, interactionId);
+        this.addInteractionControls(interactionElement, interactionId);
       }
       
       // Insert into DOM
@@ -1032,6 +1055,16 @@ window.insertCompareContrastBlock = async () => {
 
 window.editInteraction = (interactionId) => {
   interactionManager.editInteraction(interactionId);
+};
+
+window.moveInteraction = (interactionId, direction) => {
+  interactionManager.moveInteraction(interactionId, direction);
+};
+
+window.deleteInteraction = (interactionId) => {
+  if (confirm('Are you sure you want to delete this interaction?')) {
+    interactionManager.deleteInteraction(interactionId);
+  }
 };
 
 // Main initialization function
