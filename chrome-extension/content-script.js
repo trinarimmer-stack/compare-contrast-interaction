@@ -1579,7 +1579,6 @@
                     overflow: visible !important;
                     position: static !important;
                   `;
-                  `;
                   parent = parent.parentElement;
                 }
                 
