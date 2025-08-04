@@ -945,10 +945,6 @@
       }
 
       // Check if floating button already exists
-      if (document.querySelector('.compare-contrast-block-btn')) {
-        console.log('[Rise Extension] Floating button already exists');
-        return;
-      }
       if (document.getElementById('rise-compare-contrast-fab')) {
         console.log('[Rise Extension] Floating button already exists');
         return;
