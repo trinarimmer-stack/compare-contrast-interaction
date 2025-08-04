@@ -331,26 +331,32 @@ export class InteractionManager {
     if (window.riseIntegration) {
       const insertionPoint = await window.riseIntegration.findBlockInsertionPoint();
       if (insertionPoint) {
+        console.log('✅ Found Rise insertion point:', insertionPoint);
         return insertionPoint;
       }
     }
 
-    // Fallback to basic selectors if Rise integration isn't available
-    const selectors = [
+    // Enhanced Rise-specific selectors
+    const riseSelectors = [
+      '[data-testid="lesson-content"] .block:last-child',
       '.lesson-content .block:last-child',
-      '.lesson-body .block:last-child', 
+      '.lesson-body .block:last-child',
       '.content-area .block:last-child',
       '.main-content .block:last-child',
-      '[data-testid="lesson-content"] .block:last-child'
+      '[class*="lesson"] [class*="block"]:last-child',
+      '[class*="content"] [class*="block"]:last-child'
     ];
 
-    for (const selector of selectors) {
+    for (const selector of riseSelectors) {
       const element = document.querySelector(selector);
       if (element) {
+        console.log('✅ Found insertion point with Rise selector:', selector);
         return element;
       }
     }
 
+    // Avoid using body as insertion point - this places blocks outside Rise content
+    console.warn('❌ No suitable Rise insertion point found - blocks may not display properly');
     return null;
   }
 
