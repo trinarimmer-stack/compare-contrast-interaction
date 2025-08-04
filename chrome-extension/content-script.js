@@ -1267,7 +1267,12 @@ function isContentBlock(element) {
   const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup'];
   
   if (skipTags.includes(element.tagName)) return false;
-  if (skipClasses.some(cls => element.className.includes(cls))) return false;
+  
+  // Safely check className - handle cases where it might not be a string
+  const className = element.className || '';
+  const classNameStr = typeof className === 'string' ? className : className.toString();
+  if (skipClasses.some(cls => classNameStr.includes(cls))) return false;
+  
   if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
   
   return true;
