@@ -495,9 +495,22 @@
     
     window.insertingInteraction = true;
     
+    // Function to check if we're in preview mode
+    function isPreviewMode() {
+      const url = window.location.href;
+      const isPreview = url.includes('/preview/') || 
+                       url.includes('?preview=') ||
+                       url.includes('/share/') ||
+                       document.querySelector('[data-testid="PreviewModeIndicator"]') ||
+                       document.body.classList.contains('preview-mode') ||
+                       document.querySelector('.preview-mode') ||
+                       document.querySelector('[class*="preview"]');
+      console.log('[Rise Extension] Preview mode check:', {url, isPreview});
+      return isPreview;
+    }
+
     // Store the configuration globally so the injected script can access it
     window.compareContrastConfig = { activityInstructions, prompt, idealResponse: ideal, placeholder };
-    
     // Generate unique ID for this interaction
     const interactionId = 'compare-contrast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
@@ -911,26 +924,6 @@
       style.href = chrome.runtime.getURL('styles.css');
       document.head.appendChild(style);
     }
-
-    // Detect if we're in preview mode - expanded detection
-    const isPreviewMode = () => {
-      const url = window.location.href;
-      const isPreview = url.includes('/preview') || 
-             url.includes('/published') ||
-             url.includes('/player/') ||
-             document.querySelector('[data-testid*="preview"]') ||
-             document.querySelector('.preview-mode') ||
-             document.querySelector('.player-mode') ||
-             document.body.classList.contains('preview-mode') ||
-             document.body.classList.contains('player-mode') ||
-             document.documentElement.classList.contains('preview-mode') ||
-             document.documentElement.classList.contains('player-mode') ||
-             document.querySelector('.rise-player') ||
-             !document.querySelector('.blocks-authoring'); // If no authoring interface, likely preview
-      
-      console.log('[Rise Extension] Preview mode check:', { url, isPreview });
-      return isPreview;
-    };
 
     // Create floating button only in editing mode
     const createFloatingButton = () => {
