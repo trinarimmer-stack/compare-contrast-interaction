@@ -1206,48 +1206,50 @@ function createInsertionZones() {
   
   // Find content blocks to create zones between them
   const contentBlocks = findContentBlocks();
+  console.log('Creating insertion zones for', contentBlocks.length, 'blocks');
   
-  // Only create zones between consecutive blocks, not overlapping
-  for (let i = 0; i < contentBlocks.length - 1; i++) {
-    const currentBlock = contentBlocks[i];
-    const nextBlock = contentBlocks[i + 1];
-    
-    // Check if there's enough space between blocks to insert a zone
-    const currentRect = currentBlock.getBoundingClientRect();
-    const nextRect = nextBlock.getBoundingClientRect();
-    const gap = nextRect.top - (currentRect.top + currentRect.height);
-    
-    // Only create zone if there's a reasonable gap (at least 20px)
-    if (gap >= 20) {
-      createInsertionZone(currentBlock, 'after');
+  if (contentBlocks.length === 0) {
+    console.log('No content blocks found - creating fallback insertion system');
+    // If no blocks found, create a simple floating add button
+    createFloatingAddButton();
+    return;
+  }
+  
+  // Create zones after each block
+  contentBlocks.forEach((block, index) => {
+    createInsertionZone(block, 'after');
+    if (index === 0) {
+      // Also create one before the first block
+      createInsertionZone(block, 'before');
     }
-  }
+  });
   
-  // Create a zone at the very end
-  if (contentBlocks.length > 0) {
-    const lastBlock = contentBlocks[contentBlocks.length - 1];
-    createInsertionZone(lastBlock, 'after');
-  }
+  console.log('Created', document.querySelectorAll('.insertion-zone').length, 'insertion zones');
 }
 
 function findContentBlocks() {
-  // More specific selectors for Rise content blocks
+  // Broader selectors that should work in most Rise environments
   const selectors = [
-    '.blocks-authoring .block:not(.compare-contrast-container)',
-    '.lesson-content .block:not(.compare-contrast-container)',
-    '[data-block-type]:not([data-block-type="compare-contrast"]):not(.insertion-zone)'
+    '.block:not(.compare-contrast-container)',
+    '[class*="block"]:not(.compare-contrast-container)',
+    '[data-block-type]:not([data-block-type="compare-contrast"])',
+    'main > *:not(.insertion-zone):not(.compare-contrast-container)',
+    '.lesson-content > *:not(.insertion-zone):not(.compare-contrast-container)',
+    '.content-area > *:not(.insertion-zone):not(.compare-contrast-container)'
   ];
   
   const blocks = new Set();
   
   selectors.forEach(selector => {
     document.querySelectorAll(selector).forEach(element => {
-      // Filter out obviously non-content elements and ensure they're actual Rise blocks
-      if (isContentBlock(element) && isRiseContentBlock(element)) {
+      // Filter out obviously non-content elements
+      if (isContentBlock(element)) {
         blocks.add(element);
       }
     });
   });
+  
+  console.log('Found blocks:', blocks.size);
   
   return Array.from(blocks).sort((a, b) => {
     const position = a.compareDocumentPosition(b);
@@ -1255,10 +1257,54 @@ function findContentBlocks() {
   });
 }
 
+function createFloatingAddButton() {
+  // Remove any existing floating button
+  const existing = document.querySelector('.rise-compare-contrast-fab');
+  if (existing) existing.remove();
+  
+  const fab = document.createElement('div');
+  fab.className = 'rise-compare-contrast-fab';
+  fab.innerHTML = '+';
+  fab.style.cssText = `
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: #007cff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 124, 255, 0.3);
+    z-index: 10000;
+    transition: all 0.2s ease;
+  `;
+  
+  fab.addEventListener('click', () => {
+    insertBlockAtZone(null);
+  });
+  
+  fab.addEventListener('mouseenter', () => {
+    fab.style.transform = 'scale(1.1)';
+  });
+  
+  fab.addEventListener('mouseleave', () => {
+    fab.style.transform = 'scale(1)';
+  });
+  
+  document.body.appendChild(fab);
+  console.log('Created fallback floating add button');
+}
+
 function isContentBlock(element) {
   // Skip elements that are clearly not content blocks
-  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'HEADER', 'NAV', 'FOOTER'];
-  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup', 'toolbar', 'sidebar', 'navigation'];
+  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE'];
+  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup'];
   
   if (skipTags.includes(element.tagName)) return false;
   
@@ -1267,22 +1313,9 @@ function isContentBlock(element) {
   const classNameStr = className ? (typeof className === 'string' ? className : className.toString()) : '';
   if (skipClasses.some(cls => classNameStr.includes(cls))) return false;
   
-  if (element.offsetWidth < 100 || element.offsetHeight < 50) return false;
+  if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
   
   return true;
-}
-
-function isRiseContentBlock(element) {
-  // Check if this is actually a Rise content block
-  const className = element.className || '';
-  const classNameStr = typeof className === 'string' ? className : className.toString();
-  
-  // Must have block-related classes AND be mounted (actively displayed)
-  return (classNameStr.includes('block') && 
-          classNameStr.includes('mounted') && 
-          !classNameStr.includes('toolbar') &&
-          !classNameStr.includes('navigation') &&
-          element.getAttribute('data-block-type') !== 'compare-contrast');
 }
 
 function createInsertionZone(referenceBlock, position) {
