@@ -949,11 +949,13 @@
       return;
     }
     
-    // Find lesson content within the content area
-    const lessonContent = contentArea.querySelector('[class*="lesson-body"], [class*="blocks"], [class*="sparkle"]') || contentArea;
+    // Find lesson content within the content area - avoid matching our own sparkle classes
+    const lessonContent = contentArea.querySelector('[class*="lesson-body"], [class*="blocks"]:not([class*="sparkle"])') || contentArea;
     
     // Get all sparkle-fountain blocks in the lesson content area (these are the actual Rise blocks)
-    const allBlocks = Array.from(lessonContent.children).filter(child => 
+    // Search in the same parent container where the riseBlock actually exists
+    const blockParent = riseBlock.parentElement;
+    const allBlocks = Array.from(blockParent.children).filter(child => 
       child.classList.contains('sparkle-fountain')
     );
     
