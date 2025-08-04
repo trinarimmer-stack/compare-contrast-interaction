@@ -852,7 +852,23 @@ class InteractionManager {
     console.log('New previous sibling:', element.previousElementSibling?.tagName, element.previousElementSibling?.className?.substring(0, 50));
     console.log('New next sibling:', element.nextElementSibling?.tagName, element.nextElementSibling?.className?.substring(0, 50));
     
+    // Check if CSS positioning is interfering
+    const computedStyle = window.getComputedStyle(element);
+    console.log('Element positioning:', {
+      position: computedStyle.position,
+      top: computedStyle.top,
+      left: computedStyle.left,
+      transform: computedStyle.transform,
+      zIndex: computedStyle.zIndex
+    });
+    
+    // Force a layout recalculation
+    element.style.display = 'none';
+    element.offsetHeight; // Trigger reflow
+    element.style.display = '';
+    
     this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
+  }
   }
 
   findInsertionPoint() {
