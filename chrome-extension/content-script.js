@@ -1057,9 +1057,6 @@
         });
       }, 1000);
     });
-        waitForRise().then(initializeExtension);
-      }, 1000);
-    });
   }
 
   // Function to restore interactions from localStorage
