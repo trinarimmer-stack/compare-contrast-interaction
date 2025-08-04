@@ -898,12 +898,28 @@
   function deleteInteraction(interactionId) {
     if (confirm('Are you sure you want to delete this interaction?')) {
       const container = document.querySelector(`#${interactionId}`).closest('.compare-contrast-container');
-      container.remove();
       
-      // Also remove from localStorage
-      const storageKey = `rise-interaction-${interactionId}`;
-      localStorage.removeItem(storageKey);
-      console.log('[Rise Extension] Removed interaction from localStorage:', storageKey);
+      if (container) {
+        // Find the sparkle-fountain block that contains this interaction
+        const riseBlock = container.closest('.sparkle-fountain');
+        
+        if (riseBlock) {
+          // Remove the entire Rise block structure
+          riseBlock.remove();
+          console.log('[Rise Extension] Removed entire Rise block structure');
+        } else {
+          // Fallback to removing just the container
+          container.remove();
+          console.log('[Rise Extension] Removed interaction container (fallback)');
+        }
+        
+        // Also remove from localStorage
+        const storageKey = `rise-interaction-${interactionId}`;
+        localStorage.removeItem(storageKey);
+        console.log('[Rise Extension] Removed interaction from localStorage:', storageKey);
+      } else {
+        console.log('[Rise Extension] Could not find interaction container to delete');
+      }
     }
   }
 
