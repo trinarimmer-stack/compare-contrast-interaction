@@ -340,37 +340,40 @@ export class InteractionManager {
   async findInsertionPoint() {
     console.log('🔍 Looking for Rise insertion point...');
     
-    // Use Rise integration to find proper insertion point
-    if (window.riseIntegration) {
-      const insertionPoint = await window.riseIntegration.findBlockInsertionPoint();
-      if (insertionPoint && !this.isGuideOverlay(insertionPoint)) {
-        console.log('✅ Found Rise insertion point:', insertionPoint);
-        return insertionPoint;
-      }
+    // First, try to find the actual Rise lesson content container
+    const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
+    
+    if (!lessonContainer) {
+      console.warn('❌ No Rise lesson container found');
+      return null;
     }
 
-    // Look for actual Rise lesson blocks, avoiding guide overlays
-    const riseSelectors = [
-      '[data-testid="lesson-content"] .block:last-child:not([class*="overlay"]):not([class*="guide"])',
-      '.lesson-content .block:last-child:not([class*="overlay"]):not([class*="guide"])', 
-      '.lesson-body .block:last-child:not([class*="overlay"]):not([class*="guide"])',
-      '.content-area .block:last-child:not([class*="overlay"]):not([class*="guide"])',
-      '.main-content .block:last-child:not([class*="overlay"]):not([class*="guide"])',
-      // Look for Rise-specific content elements
-      '[data-testid="lesson-content"] > div:last-child:not([class*="overlay"]):not([class*="guide"])',
-      '.rise-lesson-content .block:last-child:not([class*="overlay"]):not([class*="guide"])'
-    ];
+    console.log('📍 Found lesson container:', lessonContainer);
 
-    for (const selector of riseSelectors) {
-      const element = document.querySelector(selector);
-      if (element && !this.isGuideOverlay(element)) {
-        console.log('✅ Found valid insertion point:', selector, element);
-        return element;
-      }
+    // Look for actual content blocks within the lesson container, excluding overlays
+    const contentBlocks = Array.from(lessonContainer.children).filter(child => {
+      const isOverlay = this.isGuideOverlay(child);
+      const isFloatingButton = child.id === 'rise-compare-contrast-fab';
+      const isCustomContent = child.classList.contains('rise-custom-content-container');
+      
+      console.log(`🔍 Checking element:`, child.tagName, child.className, {
+        isOverlay,
+        isFloatingButton, 
+        isCustomContent
+      });
+      
+      return !isOverlay && !isFloatingButton && !isCustomContent;
+    });
+
+    if (contentBlocks.length > 0) {
+      const lastBlock = contentBlocks[contentBlocks.length - 1];
+      console.log('✅ Found last content block:', lastBlock);
+      return lastBlock;
     }
 
-    console.warn('❌ No suitable Rise content insertion point found');
-    return null;
+    // If no content blocks found, use the lesson container itself as insertion point
+    console.log('⚠️ No content blocks found, using lesson container as insertion point');
+    return lessonContainer;
   }
 
   isGuideOverlay(element) {
