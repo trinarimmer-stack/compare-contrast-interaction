@@ -24,7 +24,7 @@
                                document.querySelector('.preview-button.active') ||
                                document.querySelector('.preview-button.selected') ||
                                document.querySelector('[role="tab"][aria-selected="true"][data-testid*="preview"]') ||
-                               document.querySelector('[role="tab"][aria-selected="true"]:contains("Preview")');
+                               Array.from(document.querySelectorAll('[role="tab"][aria-selected="true"]')).find(tab => tab.textContent.includes('Preview'));
     
     // Check for specific preview mode indicators
     const hasPreviewModeIndicator = document.querySelector('[data-testid="PreviewModeIndicator"]') ||
