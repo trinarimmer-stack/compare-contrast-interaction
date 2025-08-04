@@ -1172,6 +1172,9 @@ async function initializeExtension() {
       
       // Restore any saved interactions
       await interactionManager.restoreAllInteractions();
+      
+      // Setup smart insertion system
+      setupSmartInsertion();
     } else {
       console.log('Preview mode detected - hiding authoring controls');
     }
@@ -1180,6 +1183,302 @@ async function initializeExtension() {
   } catch (error) {
     console.error('Error during extension setup:', error);
     // Continue anyway - don't let setup errors prevent basic functionality
+  }
+}
+
+// Smart Insertion System
+function setupSmartInsertion() {
+  console.log('Setting up smart insertion system');
+  
+  // Remove floating button since we're replacing it
+  const existingFab = document.querySelector('.rise-compare-contrast-fab');
+  if (existingFab) {
+    existingFab.remove();
+  }
+  
+  // Create insertion zones between content blocks
+  createInsertionZones();
+  
+  // Watch for content changes and recreate zones
+  const observer = new MutationObserver(() => {
+    // Debounce to avoid excessive updates
+    clearTimeout(window.insertionZoneTimeout);
+    window.insertionZoneTimeout = setTimeout(createInsertionZones, 500);
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+function createInsertionZones() {
+  // Remove any existing zones
+  document.querySelectorAll('.insertion-zone').forEach(zone => zone.remove());
+  
+  // Find content blocks to create zones between them
+  const contentBlocks = findContentBlocks();
+  
+  contentBlocks.forEach((block, index) => {
+    // Create zone after each block (except the last one gets a zone before and after)
+    if (index === contentBlocks.length - 1) {
+      createInsertionZone(block, 'after');
+    } else {
+      createInsertionZone(block, 'after');
+    }
+  });
+  
+  // Create a zone at the very beginning if there are blocks
+  if (contentBlocks.length > 0) {
+    createInsertionZone(contentBlocks[0], 'before');
+  }
+}
+
+function findContentBlocks() {
+  // Look for various content block patterns
+  const selectors = [
+    '.block:not(.compare-contrast-container)',
+    '[class*="block"]:not(.compare-contrast-container)',
+    '[data-block-type]:not([data-block-type="compare-contrast"])',
+    'main > *:not(.insertion-zone):not(.compare-contrast-container)',
+    '.lesson-content > *:not(.insertion-zone):not(.compare-contrast-container)',
+    '.content-area > *:not(.insertion-zone):not(.compare-contrast-container)'
+  ];
+  
+  const blocks = new Set();
+  
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(element => {
+      // Filter out obviously non-content elements
+      if (!isContentBlock(element)) return;
+      blocks.add(element);
+    });
+  });
+  
+  return Array.from(blocks).sort((a, b) => {
+    const position = a.compareDocumentPosition(b);
+    return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+  });
+}
+
+function isContentBlock(element) {
+  // Skip elements that are clearly not content blocks
+  const skipTags = ['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE'];
+  const skipClasses = ['insertion-zone', 'rise-compare-contrast', 'modal', 'tooltip', 'popup'];
+  
+  if (skipTags.includes(element.tagName)) return false;
+  if (skipClasses.some(cls => element.className.includes(cls))) return false;
+  if (element.offsetWidth < 50 || element.offsetHeight < 20) return false;
+  
+  return true;
+}
+
+function createInsertionZone(referenceBlock, position) {
+  const zone = document.createElement('div');
+  zone.className = 'insertion-zone';
+  zone.style.cssText = `
+    height: 4px;
+    margin: 10px 0;
+    background: transparent;
+    border: 2px dashed transparent;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+  `;
+  
+  // Add hover effect
+  zone.addEventListener('mouseenter', () => {
+    zone.style.background = 'rgba(102, 126, 234, 0.1)';
+    zone.style.borderColor = '#667eea';
+    zone.style.opacity = '1';
+    zone.style.height = '8px';
+    
+    // Show insertion indicator
+    showInsertionIndicator(zone);
+  });
+  
+  zone.addEventListener('mouseleave', () => {
+    zone.style.background = 'transparent';
+    zone.style.borderColor = 'transparent';
+    zone.style.opacity = '0';
+    zone.style.height = '4px';
+    
+    // Hide insertion indicator
+    hideInsertionIndicator(zone);
+  });
+  
+  // Add click handler to insert block
+  zone.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showInsertionMenu(zone, e.clientX, e.clientY);
+  });
+  
+  // Insert the zone
+  if (position === 'before') {
+    referenceBlock.parentNode.insertBefore(zone, referenceBlock);
+  } else {
+    referenceBlock.parentNode.insertBefore(zone, referenceBlock.nextSibling);
+  }
+}
+
+function showInsertionIndicator(zone) {
+  // Remove any existing indicator
+  const existingIndicator = zone.querySelector('.insertion-indicator');
+  if (existingIndicator) return;
+  
+  const indicator = document.createElement('div');
+  indicator.className = 'insertion-indicator';
+  indicator.style.cssText = `
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #667eea;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    z-index: 1000;
+    pointer-events: none;
+  `;
+  indicator.textContent = '+ Add Compare & Contrast Block';
+  
+  zone.appendChild(indicator);
+}
+
+function hideInsertionIndicator(zone) {
+  const indicator = zone.querySelector('.insertion-indicator');
+  if (indicator) {
+    indicator.remove();
+  }
+}
+
+function showInsertionMenu(zone, x, y) {
+  // Remove any existing menu
+  document.querySelectorAll('.insertion-menu').forEach(menu => menu.remove());
+  
+  const menu = document.createElement('div');
+  menu.className = 'insertion-menu';
+  menu.style.cssText = `
+    position: fixed;
+    left: ${x}px;
+    top: ${y}px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 999999;
+    min-width: 200px;
+    transform: translateY(-50%);
+    border: 1px solid #e1e5e9;
+  `;
+  
+  const button = document.createElement('button');
+  button.style.cssText = `
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+  `;
+  
+  button.innerHTML = `
+    <div style="
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    ">⚖️</div>
+    <div>
+      <div style="font-weight: 500; color: #333;">Compare & Contrast</div>
+      <div style="font-size: 12px; color: #666;">Interactive learning activity</div>
+    </div>
+  `;
+  
+  button.addEventListener('mouseenter', () => {
+    button.style.backgroundColor = '#f8f9fa';
+  });
+  
+  button.addEventListener('mouseleave', () => {
+    button.style.backgroundColor = 'white';
+  });
+  
+  button.addEventListener('click', () => {
+    menu.remove();
+    insertBlockAtZone(zone);
+  });
+  
+  menu.appendChild(button);
+  document.body.appendChild(menu);
+  
+  // Close menu when clicking outside
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    }
+  };
+  
+  setTimeout(() => {
+    document.addEventListener('click', closeMenu);
+  }, 100);
+}
+
+async function insertBlockAtZone(zone) {
+  try {
+    // Get default configuration
+    const defaultConfig = {
+      title: 'Compare & Contrast',
+      prompt: 'Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.',
+      idealResponse: 'An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.',
+      placeholder: 'Type your response here...'
+    };
+    
+    // Save the interaction
+    const interactionId = await interactionManager.saveConfiguration(defaultConfig);
+    
+    // Create the HTML
+    const interactionHTML = uiManager.createInteractionHTML(interactionId, defaultConfig);
+    const container = document.createElement('div');
+    container.innerHTML = interactionHTML;
+    const interactionElement = container.firstElementChild;
+    
+    // Add controls for authoring mode
+    if (riseIntegration.isAuthoringMode()) {
+      interactionManager.addInteractionControls(interactionElement, interactionId);
+    }
+    
+    // Replace the zone with the interaction
+    zone.parentNode.replaceChild(interactionElement, zone);
+    
+    // Initialize interaction functionality
+    interactionManager.initializeInteraction(interactionElement);
+    
+    // Recreate insertion zones
+    setTimeout(createInsertionZones, 100);
+    
+    uiManager.showToast('Compare & Contrast block added!', 'success');
+    
+  } catch (error) {
+    console.error('Error inserting block at zone:', error);
+    uiManager.showToast('Error adding block', 'error');
   }
 }
 
