@@ -177,27 +177,67 @@ export class InteractionManager {
         return;
       }
 
-      // Find the lesson container
-      const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
-      if (!lessonContainer) {
-        this.uiManager.showToast('Cannot find lesson content area', 'error');
-        return;
+      console.log('🔄 Moving interaction:', interactionId, direction);
+      console.log('📍 Current element:', element);
+
+      // First, let's examine the actual DOM structure
+      const container = element.closest('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content, .apt-lesson-editor');
+      console.log('📦 Found container:', container);
+
+      if (!container) {
+        // Try finding the parent that contains multiple blocks
+        let parent = element.parentElement;
+        while (parent && parent !== document.body) {
+          const siblings = Array.from(parent.children);
+          if (siblings.length > 1) {
+            console.log('📦 Using parent with multiple children:', parent);
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        
+        if (!parent || parent === document.body) {
+          this.uiManager.showToast('Cannot find lesson content container', 'error');
+          return;
+        }
+        container = parent;
       }
 
-      // Get all content blocks within the lesson container (including interaction blocks)
-      const contentBlocks = Array.from(lessonContainer.children).filter(child => {
-        // Include interaction blocks and typical Rise content blocks
-        return child.hasAttribute('data-interaction-id') || 
-               child.classList.contains('block') ||
-               child.classList.contains('content-block') ||
-               child.tagName === 'DIV' && child.children.length > 0;
+      // Get ALL children and find meaningful content blocks
+      const allChildren = Array.from(container.children);
+      console.log('👥 All children:', allChildren.map(child => ({
+        tag: child.tagName,
+        classes: child.className,
+        id: child.id,
+        hasInteractionId: child.hasAttribute('data-interaction-id'),
+        textContent: child.textContent?.substring(0, 50)
+      })));
+
+      // Filter for actual content blocks (not scripts, styles, etc.)
+      const contentBlocks = allChildren.filter(child => {
+        const isScript = child.tagName === 'SCRIPT';
+        const isStyle = child.tagName === 'STYLE';
+        const isHidden = child.style.display === 'none';
+        const isInteraction = child.hasAttribute('data-interaction-id');
+        const hasVisibleContent = child.offsetHeight > 0 || child.offsetWidth > 0;
+        
+        return !isScript && !isStyle && !isHidden && (isInteraction || hasVisibleContent);
       });
+
+      console.log('📝 Content blocks:', contentBlocks.map(child => ({
+        tag: child.tagName,
+        classes: child.className,
+        hasInteractionId: child.hasAttribute('data-interaction-id'),
+        isCurrentElement: child === element
+      })));
 
       const currentIndex = contentBlocks.indexOf(element);
       if (currentIndex === -1) {
         this.uiManager.showToast('Interaction not found in content blocks', 'error');
         return;
       }
+
+      console.log('📊 Current index:', currentIndex, 'of', contentBlocks.length);
 
       let targetIndex;
       if (direction === 'up') {
@@ -215,16 +255,23 @@ export class InteractionManager {
       }
 
       const targetElement = contentBlocks[targetIndex];
+      console.log('🎯 Target element:', targetElement);
+      console.log('🔄 Moving', direction === 'up' ? 'before' : 'after', 'target element');
+
+      // Remove element first, then insert in new position
+      const parent = element.parentNode;
+      parent.removeChild(element);
       
       if (direction === 'up') {
-        DOMUtils.insertBefore(element, targetElement);
+        parent.insertBefore(element, targetElement);
       } else {
-        DOMUtils.insertAfter(element, targetElement);
+        parent.insertBefore(element, targetElement.nextSibling);
       }
 
+      console.log('✅ Move operation completed');
       this.uiManager.showToast(`Interaction moved ${direction} successfully`, 'success');
     } catch (error) {
-      console.error('Error moving interaction:', error);
+      console.error('❌ Error moving interaction:', error);
       this.uiManager.showToast('Error moving interaction', 'error');
     }
   }
