@@ -635,11 +635,13 @@ class RiseIntegration {
         align-items: center;
         justify-content: center;
         margin-right: 12px;
-        color: #f0f0f0;
-        font-size: 18px;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
       ">
-        ⚖️
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
+          <path d="M12 3v18"/>
+          <path d="M8 7a4 4 0 0 1 8 0c0 1-1 2-2 2H10c-1 0-2-1-2-2z"/>
+          <path d="M8 17a4 4 0 0 1 8 0c0 1-1 2-2 2H10c-1 0-2-1-2-2z"/>
+          <circle cx="12" cy="12" r="1"/>
+        </svg>
       </div>
       <div>
         <div style="
@@ -1557,7 +1559,12 @@ function findCurrentInsertionPoint() {
     '.add-block-indicator', 
     '.block-insertion-point',
     '[class*="insertion"]',
-    '[data-insertion]'
+    '[data-insertion]',
+    '.drop-zone--active',
+    '.drop-target',
+    '[data-testid*="insertion"]',
+    '.lesson-builder__insertion',
+    '.content-insertion-point'
   ];
   
   for (const selector of indicators) {
@@ -1568,12 +1575,28 @@ function findCurrentInsertionPoint() {
     }
   }
   
-  // Fallback: Look for recently clicked add buttons
-  const addButtons = document.querySelectorAll('[class*="add"], [class*="plus"]');
-  for (const button of addButtons) {
-    if (button.dataset.recentlyClicked || button.classList.contains('active')) {
-      console.log('📍 Found recently clicked add button');
-      return button.closest('[class*="block"], [class*="content"]');
+  // Enhanced search for Rise 360 specific patterns
+  const riseInsertionSelectors = [
+    '.lesson-builder .block:last-child',
+    '[data-testid="lesson-content"] > *:last-child',
+    '.lesson-content > div:last-child',
+    '.content-area > div:last-child'
+  ];
+  
+  for (const selector of riseInsertionSelectors) {
+    const element = document.querySelector(selector);
+    if (element) {
+      console.log('📍 Found Rise insertion point (last block):', selector);
+      return element;
+    }
+  }
+  
+  // Look for recently interacted elements with Add buttons
+  const recentlyClickedElements = document.querySelectorAll('[data-recently-clicked="true"], .recently-active, .active');
+  for (const element of recentlyClickedElements) {
+    if (element.closest('[class*="lesson"], [class*="content"]')) {
+      console.log('📍 Found recently interacted element');
+      return element;
     }
   }
   
