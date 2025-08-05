@@ -136,6 +136,14 @@ export class RiseIntegration {
   }
 
   async findBlockListContainer() {
+    // Look for the exact Rise 360 block list structure
+    const blockList = document.querySelector('.block-wizard__list[role="list"]');
+    if (blockList) {
+      console.log('Found Rise 360 block list');
+      return blockList;
+    }
+    
+    // Fallback to checking the old selectors
     for (const selector of this.riseSelectors.blockList) {
       try {
         const element = await DOMUtils.waitForElement(selector, 2000);
@@ -143,7 +151,6 @@ export class RiseIntegration {
           return element;
         }
       } catch (error) {
-        // Continue to next selector
         continue;
       }
     }
@@ -152,64 +159,54 @@ export class RiseIntegration {
   }
 
   createCustomBlockButton() {
-    const button = document.createElement('div');
-    button.className = 'custom-block-button compare-contrast-block';
-    button.style.cssText = `
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      margin: 4px 0;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    // Create the exact Rise 360 block structure
+    const blockWrapper = document.createElement('div');
+    blockWrapper.className = 'authoring-tooltip';
+    
+    const blockItem = document.createElement('li');
+    blockItem.className = 'block-wizard__item';
+    blockItem.setAttribute('role', 'listitem');
+    
+    const blockButton = document.createElement('button');
+    blockButton.className = 'block-wizard__link';
+    blockButton.type = 'button';
+    
+    // Create the icon container with SVG
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'block-wizard__icon';
+    
+    // Create a custom SVG icon for Compare & Contrast
+    iconDiv.innerHTML = `
+      <svg aria-hidden="true" fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient gradientUnits="userSpaceOnUse" id="compare-contrast-gradient" x1="2" x2="46" y1="2" y2="46">
+            <stop stop-color="#667eea"></stop>
+            <stop offset="1" stop-color="#764ba2"></stop>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="12" width="14" height="24" rx="2" fill="url(#compare-contrast-gradient)" stroke="white" stroke-width="2"/>
+        <rect x="28" y="12" width="14" height="24" rx="2" fill="url(#compare-contrast-gradient)" stroke="white" stroke-width="2"/>
+        <path d="M20 20 L28 20 M20 24 L28 24 M20 28 L28 28" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="24" cy="8" r="3" fill="url(#compare-contrast-gradient)"/>
+        <circle cx="24" cy="40" r="3" fill="url(#compare-contrast-gradient)"/>
+      </svg>
     `;
-
-    button.innerHTML = `
-      <div style="
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        color: white;
-        font-size: 18px;
-      ">
-        ⚖️
-      </div>
-      <div>
-        <div style="
-          font-weight: 600;
-          color: #333;
-          font-size: 14px;
-          margin-bottom: 2px;
-        ">Compare & Contrast</div>
-        <div style="
-          color: #666;
-          font-size: 12px;
-        ">Interactive learning activity</div>
-      </div>
+    
+    // Add the block name
+    const blockName = document.createTextNode('Compare & Contrast');
+    
+    // Assemble the button
+    blockButton.appendChild(iconDiv);
+    blockButton.appendChild(blockName);
+    blockItem.appendChild(blockButton);
+    blockWrapper.appendChild(blockItem);
+    
+    // Add Rise-compatible styling
+    blockWrapper.style.cssText = `
+      position: relative;
     `;
-
-    // Add hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.borderColor = '#667eea';
-      button.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.15)';
-      button.style.transform = 'translateY(-1px)';
-    });
-
-    button.addEventListener('mouseleave', () => {
-      button.style.borderColor = '#e0e0e0';
-      button.style.boxShadow = 'none';
-      button.style.transform = 'translateY(0)';
-    });
-
-    return button;
+    
+    return blockWrapper;
   }
 
   async injectCustomStyles() {
