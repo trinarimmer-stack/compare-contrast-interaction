@@ -869,54 +869,98 @@ class InteractionManager {
     
     console.log('🔄 Starting move operation for:', interactionId, direction);
     
-    // Find the correct container - walk up to find one with visible content blocks
-    let container = element.parentElement;
-    let attempts = 0;
+    // Try to find Rise's actual lesson content area (excluding headers, titles, etc.)
+    const riseContentSelectors = [
+      '[data-testid="lesson-content"]',
+      '.lesson-content', 
+      '.lesson-body',
+      '.content-area',
+      '.main-content',
+      '[class*="lesson-content"]',
+      '[class*="content-area"]'
+    ];
+
+    let lessonContentContainer = null;
     
-    while (container && attempts < 10) {
-      const children = Array.from(container.children);
-      
-      // Look for visible content blocks (not scripts, styles, overlays)
-      const visibleChildren = children.filter(child => {
-        return child.tagName !== 'SCRIPT' && 
-               child.tagName !== 'STYLE' && 
-               child.tagName !== 'LINK' &&
-               !child.classList.contains('apt-guide-overlay') &&
-               child.id !== 'rise-compare-contrast-fab' &&
-               (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
-      });
-
-      console.log(`📦 Container level ${attempts}:`, {
-        tag: container.tagName,
-        classes: container.className.substring(0, 50),
-        totalChildren: children.length,
-        visibleChildren: visibleChildren.length
-      });
-
-      // If we have multiple visible children and our element is among them, this is our container
-      if (visibleChildren.length > 1 && visibleChildren.includes(element)) {
-        console.log('✅ Found suitable container at level', attempts);
+    // Try each selector to find the actual lesson content area
+    for (const selector of riseContentSelectors) {
+      const container = document.querySelector(selector);
+      if (container && container.contains(element)) {
+        console.log(`✅ Found lesson content with selector: ${selector}`);
+        lessonContentContainer = container;
         break;
       }
-
-      container = container.parentElement;
-      attempts++;
     }
 
-    if (!container || attempts >= 10) {
-      this.uiManager.showToast('Cannot find suitable content container', 'error');
+    // If no specific lesson container found, walk up from the element but stop before going too high
+    if (!lessonContentContainer) {
+      let current = element.parentElement;
+      let depth = 0;
+      const maxDepth = 5; // Prevent going too high in the DOM
+      
+      while (current && depth < maxDepth) {
+        const children = Array.from(current.children);
+        
+        // Look for containers that have multiple content blocks but aren't the whole page
+        const contentChildren = children.filter(child => {
+          return child.tagName !== 'SCRIPT' && 
+                 child.tagName !== 'STYLE' && 
+                 child.tagName !== 'LINK' &&
+                 !child.classList.contains('apt-guide-overlay') &&
+                 child.id !== 'rise-compare-contrast-fab' &&
+                 (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+        });
+
+        // Also check if this looks like a lesson content area by class names
+        const isLessonArea = current.className.includes('lesson') || 
+                            current.className.includes('content') ||
+                            current.className.includes('block-list') ||
+                            current.hasAttribute('data-testid');
+
+        console.log(`📦 Checking container at depth ${depth}:`, {
+          tag: current.tagName,
+          classes: current.className.substring(0, 50),
+          contentChildren: contentChildren.length,
+          isLessonArea: isLessonArea,
+          hasOurElement: contentChildren.includes(element)
+        });
+
+        if (contentChildren.length > 1 && contentChildren.includes(element) && isLessonArea) {
+          console.log('✅ Found suitable lesson container at depth', depth);
+          lessonContentContainer = current;
+          break;
+        }
+
+        current = current.parentElement;
+        depth++;
+      }
+    }
+
+    if (!lessonContentContainer) {
+      this.uiManager.showToast('Cannot find lesson content container', 'error');
       return;
     }
 
-    // Get all content blocks (filter out scripts, styles, etc.)
-    const allChildren = Array.from(container.children);
+    console.log('📍 Using container:', lessonContentContainer);
+
+    // Get all content blocks within the lesson content area
+    const allChildren = Array.from(lessonContentContainer.children);
     const contentBlocks = allChildren.filter(child => {
-      return child.tagName !== 'SCRIPT' && 
-             child.tagName !== 'STYLE' && 
-             child.tagName !== 'LINK' &&
-             !child.classList.contains('apt-guide-overlay') &&
-             child.id !== 'rise-compare-contrast-fab' &&
-             (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+      // Exclude technical elements and title/header areas
+      const isScript = child.tagName === 'SCRIPT';
+      const isStyle = child.tagName === 'STYLE';
+      const isLink = child.tagName === 'LINK';
+      const isOverlay = child.classList.contains('apt-guide-overlay');
+      const isFloatingButton = child.id === 'rise-compare-contrast-fab';
+      const isTitle = child.classList.contains('title') || 
+                     child.classList.contains('header') ||
+                     child.querySelector('h1, .title, .header');
+      const hasVisibleDimensions = child.offsetHeight > 0 || child.offsetWidth > 0;
+      const isInteraction = child.hasAttribute('data-interaction-id');
+      
+      // Include if it's our interaction or if it has visible dimensions and isn't excluded
+      return (isInteraction || hasVisibleDimensions) && 
+             !isScript && !isStyle && !isLink && !isOverlay && !isFloatingButton && !isTitle;
     });
 
     console.log('📝 Content blocks found:', contentBlocks.length);
@@ -925,7 +969,8 @@ class InteractionManager {
       tag: child.tagName,
       classes: child.className.substring(0, 30),
       isInteraction: child.hasAttribute('data-interaction-id'),
-      isCurrentElement: child === element
+      isCurrentElement: child === element,
+      hasTitle: child.querySelector('h1, .title, .header') !== null
     })));
 
     const currentIndex = contentBlocks.indexOf(element);
@@ -958,7 +1003,7 @@ class InteractionManager {
       targetIndex: targetIndex
     });
 
-    // Perform the move
+    // Perform the move within the lesson content container
     const parent = element.parentNode;
     parent.removeChild(element);
     
@@ -973,13 +1018,20 @@ class InteractionManager {
     }
 
     // Verify the move
-    const newContentBlocks = Array.from(container.children).filter(child => {
-      return child.tagName !== 'SCRIPT' && 
-             child.tagName !== 'STYLE' && 
-             child.tagName !== 'LINK' &&
-             !child.classList.contains('apt-guide-overlay') &&
-             child.id !== 'rise-compare-contrast-fab' &&
-             (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+    const newContentBlocks = Array.from(lessonContentContainer.children).filter(child => {
+      const isScript = child.tagName === 'SCRIPT';
+      const isStyle = child.tagName === 'STYLE';
+      const isLink = child.tagName === 'LINK';
+      const isOverlay = child.classList.contains('apt-guide-overlay');
+      const isFloatingButton = child.id === 'rise-compare-contrast-fab';
+      const isTitle = child.classList.contains('title') || 
+                     child.classList.contains('header') ||
+                     child.querySelector('h1, .title, .header');
+      const hasVisibleDimensions = child.offsetHeight > 0 || child.offsetWidth > 0;
+      const isInteraction = child.hasAttribute('data-interaction-id');
+      
+      return (isInteraction || hasVisibleDimensions) && 
+             !isScript && !isStyle && !isLink && !isOverlay && !isFloatingButton && !isTitle;
     });
 
     const newIndex = newContentBlocks.indexOf(element);
