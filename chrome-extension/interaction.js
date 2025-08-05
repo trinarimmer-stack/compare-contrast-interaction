@@ -159,33 +159,56 @@
 
   // Auto-initialize any compare-contrast interactions on the page
   function initializeInteractions() {
-    const interactions = document.querySelectorAll('[data-interaction-type="compare-contrast"]');
+    console.log('[Compare & Contrast] Initializing interactions...');
     
-    interactions.forEach((element) => {
+    // Look for multiple possible selectors that might be used
+    const selectors = [
+      '[data-compare-contrast-interaction]',
+      '[data-interaction-type="compare-contrast"]',
+      '.compare-contrast-interaction',
+      '.compare-contrast-live'
+    ];
+    
+    let elements = [];
+    for (const selector of selectors) {
+      const found = document.querySelectorAll(selector);
+      elements = elements.concat(Array.from(found));
+    }
+    
+    // Remove duplicates
+    elements = [...new Set(elements)];
+    
+    console.log(`[Compare & Contrast] Found ${elements.length} interaction elements`);
+    
+    elements.forEach((element) => {
       // Check if already initialized
-      if (element.dataset.initialized) return;
+      if (element.dataset.initialized) {
+        console.log('[Compare & Contrast] Element already initialized, skipping');
+        return;
+      }
       
       let config = {};
       
-      // Try to get configuration from element's base64 data attribute first
+      // Method 1: Base64 encoded config (most reliable)
       if (element.dataset.configBase64) {
         try {
           const decodedConfig = atob(element.dataset.configBase64);
           config = JSON.parse(decodedConfig);
-          console.log('[Compare & Contrast] Using base64 element config:', config);
+          console.log('[Compare & Contrast] Using base64 config:', config);
         } catch (e) {
-          console.log('[Compare & Contrast] Error parsing base64 element config:', e);
+          console.log('[Compare & Contrast] Error parsing base64 config:', e);
         }
       }
       
-      // Fallback: Try to get configuration from element's data attribute
-      if (Object.keys(config).length === 0 && element.dataset.config) {
-        try {
-          config = JSON.parse(element.dataset.config);
-          console.log('[Compare & Contrast] Using element config:', config);
-        } catch (e) {
-          console.log('[Compare & Contrast] Error parsing element config:', e);
-        }
+      // Method 2: Individual data attributes (preview mode compatible)
+      if (Object.keys(config).length === 0) {
+        config = {
+          title: element.dataset.title || element.getAttribute('data-title') || "Compare & Contrast",
+          prompt: element.dataset.prompt || element.getAttribute('data-prompt') || '',
+          idealResponse: element.dataset.idealResponse || element.getAttribute('data-ideal-response') || '',
+          placeholder: element.dataset.placeholder || element.getAttribute('data-placeholder') || 'Type your response here...'
+        };
+        console.log('[Compare & Contrast] Using data attributes config:', config);
       }
       
       // Fallback to chrome storage (extension context)
@@ -258,19 +281,20 @@
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          // Check if the node itself is an interaction
-          if (node.dataset && node.dataset.interactionType === 'compare-contrast') {
+          // Check if the node itself is an interaction (multiple possible attributes)
+          if (node.dataset && (
+            node.dataset.compareContrastInteraction !== undefined ||
+            node.dataset.interactionType === 'compare-contrast' ||
+            node.classList.contains('compare-contrast-interaction')
+          )) {
             shouldInitialize = true;
           }
-          // Check if the node contains interactions
-          else if (node.querySelector && node.querySelector('[data-interaction-type="compare-contrast"]')) {
-            shouldInitialize = true;
-          }
-          // Also check for class-based selectors that might be used
-          else if (node.classList && node.classList.contains('compare-contrast-interaction')) {
-            shouldInitialize = true;
-          }
-          else if (node.querySelector && node.querySelector('.compare-contrast-interaction')) {
+          // Check if the node contains interactions (multiple selectors)
+          else if (node.querySelector && (
+            node.querySelector('[data-compare-contrast-interaction]') ||
+            node.querySelector('[data-interaction-type="compare-contrast"]') ||
+            node.querySelector('.compare-contrast-interaction')
+          )) {
             shouldInitialize = true;
           }
         }
@@ -278,6 +302,7 @@
     });
     
     if (shouldInitialize) {
+      console.log('[Compare & Contrast] New interaction detected, initializing...');
       // Small delay to ensure DOM is fully updated
       setTimeout(initializeInteractions, 100);
     }
