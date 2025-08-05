@@ -1375,15 +1375,9 @@ async function initializeExtension() {
       // Restore any saved interactions first
       await interactionManager.restoreAllInteractions();
       
-      // Strategy: Both approaches for maximum compatibility
-      // 1. Try to integrate with Rise Block Library (ideal)
+      // Primary strategy: Native Block Library Integration
       await initializeBlockLibraryIntegration();
       
-      // 2. Always provide floating button as reliable fallback
-      createPersistentFloatingButton();
-      
-      // 3. Watch for Rise's + button to enhance UX
-      watchForAddBlockButtons();
     } else {
       console.log('📖 Preview mode detected - hiding authoring controls');
     }
@@ -1424,7 +1418,16 @@ async function initializeBlockLibraryIntegration() {
 }
 
 async function checkAndInjectCustomBlock(container) {
-  // Look for Rise block library patterns
+  // Look for the exact Rise 360 Block Library structure
+  const blockList = container.querySelector ? container.querySelector('.block-wizard__list[role="list"]') : null;
+  
+  if (blockList && !blockList.querySelector('.compare-contrast-block')) {
+    console.log('📚 Found Rise Block Library, injecting custom block');
+    await injectCustomBlockIntoLibrary(blockList);
+    return;
+  }
+  
+  // Fallback selectors for older Rise versions
   const blockLibrarySelectors = [
     '.block-library',
     '.add-block-menu', 
@@ -1433,9 +1436,7 @@ async function checkAndInjectCustomBlock(container) {
     '.blocks-panel',
     '.content-blocks',
     '[class*="BlockLibrary"]',
-    '[class*="block-library"]',
-    '.overlay-panel', // Rise often uses overlay panels
-    '.modal-content' // Block library might be in a modal
+    '[class*="block-library"]'
   ];
 
   for (const selector of blockLibrarySelectors) {
@@ -1443,7 +1444,7 @@ async function checkAndInjectCustomBlock(container) {
                         container.closest ? container.closest(selector) : null;
     
     if (blockLibrary && !blockLibrary.querySelector('.compare-contrast-block')) {
-      console.log('📚 Found block library, injecting custom block');
+      console.log('📚 Found block library (fallback), injecting custom block');
       await injectCustomBlockIntoLibrary(blockLibrary);
       break;
     }
@@ -1452,36 +1453,43 @@ async function checkAndInjectCustomBlock(container) {
 
 async function injectCustomBlockIntoLibrary(blockLibrary) {
   try {
-    // Create our custom block button
+    // Use the new Rise-native block structure
     const customBlock = riseIntegration.createCustomBlockButton();
-    customBlock.classList.add('rise-custom-block');
+    customBlock.classList.add('compare-contrast-block');
     
     // Add click handler to insert the block directly
-    customBlock.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      console.log('🎯 Custom block clicked, inserting interaction');
-      await insertCompareContrastBlock();
-      
-      // Close the block library if it's in a modal/overlay
-      const modal = blockLibrary.closest('.modal, .overlay, [role="dialog"]');
-      if (modal) {
-        const closeButton = modal.querySelector('[aria-label="Close"], .close, .cancel');
-        if (closeButton) closeButton.click();
-      }
-    });
+    const blockButton = customBlock.querySelector('.block-wizard__link');
+    if (blockButton) {
+      blockButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🎯 Custom Rise block clicked, inserting interaction');
+        await insertCompareContrastBlock();
+        
+        // Close the block library if it's in a modal/overlay
+        const modal = blockLibrary.closest('.modal, .overlay, [role="dialog"], .blocks-sidebar__container');
+        if (modal) {
+          const closeButton = modal.querySelector('[aria-label="Close"], .close, .cancel, .blocks-sidebar__close');
+          if (closeButton) closeButton.click();
+        }
+      });
+    }
 
-    // Find the best insertion point in the block library
-    const insertionPoint = findBlockLibraryInsertionPoint(blockLibrary);
-    
-    if (insertionPoint) {
-      insertionPoint.appendChild(customBlock);
-      console.log('✅ Custom block added to Rise Block Library');
-    } else {
-      // Fallback: append to the block library container
+    // For the exact Rise structure, append directly to the block list
+    if (blockLibrary.classList.contains('block-wizard__list')) {
       blockLibrary.appendChild(customBlock);
-      console.log('✅ Custom block added to Rise Block Library (fallback)');
+      console.log('✅ Custom block added to Rise Block Library (native structure)');
+    } else {
+      // Fallback for older Rise versions
+      const insertionPoint = findBlockLibraryInsertionPoint(blockLibrary);
+      if (insertionPoint) {
+        insertionPoint.appendChild(customBlock);
+        console.log('✅ Custom block added to Rise Block Library (fallback)');
+      } else {
+        blockLibrary.appendChild(customBlock);
+        console.log('✅ Custom block added to Rise Block Library (direct append)');
+      }
     }
     
   } catch (error) {
@@ -1614,90 +1622,9 @@ async function findLessonContentInsertionPoint() {
 
 // Old insertion zone functions removed - replaced with Block Library integration
 
-// Fallback floating button for immediate usability
-function createFallbackFloatingButton() {
-  // Remove any existing floating button
-  const existing = document.querySelector('.rise-compare-contrast-fab');
-  if (existing) existing.remove();
-  
-  const button = uiManager.createFloatingButton();
-  
-  button.addEventListener('click', async () => {
-    console.log('🔵 Fallback floating button clicked');
-    await window.insertCompareContrastBlock();
-  });
-  
-  document.body.appendChild(button);
-  console.log('✅ Fallback floating button created');
-}
+// Legacy floating button functions removed - now using native Block Library integration
 
-// Persistent floating button - always available
-function createPersistentFloatingButton() {
-  // Remove any existing floating button
-  const existing = document.querySelector('.rise-compare-contrast-fab');
-  if (existing) existing.remove();
-  
-  const button = uiManager.createFloatingButton();
-  
-  button.addEventListener('click', async () => {
-    console.log('🟣 Persistent floating button clicked');
-    await window.insertCompareContrastBlock();
-  });
-  
-  document.body.appendChild(button);
-  console.log('✅ Persistent floating button created and ready');
-}
-
-// Watch for Rise's + buttons to enhance UX
-function watchForAddBlockButtons() {
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          // Look for Rise's native "Add Block" or "+" buttons
-          const addButtons = node.querySelectorAll ? 
-            node.querySelectorAll('button[class*="add"], button[aria-label*="Add"], button[title*="Add"], [class*="plus"]') : 
-            [];
-          
-          addButtons.forEach(button => {
-            const text = button.textContent?.toLowerCase() || '';
-            const label = button.getAttribute('aria-label')?.toLowerCase() || '';
-            const title = button.getAttribute('title')?.toLowerCase() || '';
-            
-            if (text.includes('block') || text.includes('add') || 
-                label.includes('block') || label.includes('add') ||
-                title.includes('block') || title.includes('add') ||
-                button.textContent === '+') {
-              console.log('🔘 Found potential Rise Add Block button');
-              
-              // Enhance the button with our functionality
-              enhanceAddBlockButton(button);
-            }
-          });
-        }
-      });
-    });
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-}
-
-function enhanceAddBlockButton(button) {
-  // Don't enhance the same button twice
-  if (button.dataset.enhancedByRiseExtension) return;
-  button.dataset.enhancedByRiseExtension = 'true';
-  
-  // Add a small indicator that our extension can work with this button
-  const originalClick = button.onclick;
-  
-  button.addEventListener('click', () => {
-    console.log('🎯 Enhanced Add Block button clicked - Block Library should open');
-    // The block library integration will handle adding our custom block
-  });
-}
+// Legacy add block button watching removed - now using native Block Library integration
 
 // Navigation change handler
 function handleNavigationChange() {
