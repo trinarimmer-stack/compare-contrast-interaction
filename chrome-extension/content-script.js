@@ -635,8 +635,9 @@ class RiseIntegration {
         align-items: center;
         justify-content: center;
         margin-right: 12px;
-        color: white;
+        color: #f0f0f0;
         font-size: 18px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
       ">
         ⚖️
       </div>
@@ -1457,24 +1458,24 @@ async function injectCustomBlockIntoLibrary(blockLibrary) {
     const customBlock = riseIntegration.createCustomBlockButton();
     customBlock.classList.add('compare-contrast-block');
     
-    // Add click handler to insert the block directly
-    const blockButton = customBlock.querySelector('.block-wizard__link');
-    if (blockButton) {
-      blockButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('🎯 Custom Rise block clicked, inserting interaction');
-        await insertCompareContrastBlock();
-        
-        // Close the block library if it's in a modal/overlay
-        const modal = blockLibrary.closest('.modal, .overlay, [role="dialog"], .blocks-sidebar__container');
-        if (modal) {
-          const closeButton = modal.querySelector('[aria-label="Close"], .close, .cancel, .blocks-sidebar__close');
-          if (closeButton) closeButton.click();
-        }
-      });
-    }
+    // Add click handler to insert the block at the correct insertion point
+    customBlock.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('🎯 Custom Rise block clicked, inserting interaction');
+      
+      // Find the current insertion point (where the + button was clicked)
+      const insertionPoint = findCurrentInsertionPoint();
+      await insertCompareContrastBlockAtPosition(insertionPoint);
+      
+      // Close the block library if it's in a modal/overlay
+      const modal = blockLibrary.closest('.modal, .overlay, [role="dialog"], .blocks-sidebar__container');
+      if (modal) {
+        const closeButton = modal.querySelector('[aria-label="Close"], .close, .cancel, .blocks-sidebar__close');
+        if (closeButton) closeButton.click();
+      }
+    });
 
     // For the exact Rise structure, append directly to the block list
     if (blockLibrary.classList.contains('block-wizard__list')) {
@@ -1549,7 +1550,37 @@ function setupAddBlockButtonIntegration() {
   });
 }
 
-async function insertCompareContrastBlock() {
+function findCurrentInsertionPoint() {
+  // Look for active insertion indicators in Rise
+  const indicators = [
+    '.insertion-indicator',
+    '.add-block-indicator', 
+    '.block-insertion-point',
+    '[class*="insertion"]',
+    '[data-insertion]'
+  ];
+  
+  for (const selector of indicators) {
+    const element = document.querySelector(selector);
+    if (element) {
+      console.log('📍 Found active insertion point:', selector);
+      return element;
+    }
+  }
+  
+  // Fallback: Look for recently clicked add buttons
+  const addButtons = document.querySelectorAll('[class*="add"], [class*="plus"]');
+  for (const button of addButtons) {
+    if (button.dataset.recentlyClicked || button.classList.contains('active')) {
+      console.log('📍 Found recently clicked add button');
+      return button.closest('[class*="block"], [class*="content"]');
+    }
+  }
+  
+  return null;
+}
+
+async function insertCompareContrastBlockAtPosition(insertionPoint) {
   try {
     // Get default configuration
     const defaultConfig = {
@@ -1573,15 +1604,20 @@ async function insertCompareContrastBlock() {
       interactionManager.addInteractionControls(interactionElement, interactionId);
     }
     
-    // Find the best insertion point in the lesson content
-    const insertionPoint = await findLessonContentInsertionPoint();
-    
+    // Insert at the specific position or fall back to lesson content
     if (insertionPoint) {
-      insertionPoint.appendChild(interactionElement);
-      console.log('✅ Compare & Contrast block inserted into lesson content');
+      console.log('📍 Inserting at specific insertion point');
+      insertionPoint.parentNode.insertBefore(interactionElement, insertionPoint.nextSibling);
     } else {
-      console.warn('⚠️ No suitable insertion point found, appending to body');
-      document.body.appendChild(interactionElement);
+      // Fall back to finding the lesson content
+      const lessonContent = await findLessonContentInsertionPoint();
+      if (lessonContent) {
+        lessonContent.appendChild(interactionElement);
+        console.log('✅ Compare & Contrast block inserted into lesson content');
+      } else {
+        console.warn('⚠️ No suitable insertion point found, appending to body');
+        document.body.appendChild(interactionElement);
+      }
     }
     
     // Initialize interaction functionality
@@ -1593,6 +1629,11 @@ async function insertCompareContrastBlock() {
     console.error('❌ Error inserting Compare & Contrast block:', error);
     uiManager.showToast('Error adding block', 'error');
   }
+}
+
+async function insertCompareContrastBlock() {
+  // Legacy function for backward compatibility
+  await insertCompareContrastBlockAtPosition(null);
 }
 
 async function findLessonContentInsertionPoint() {

@@ -99,12 +99,19 @@
       const resetBtn = container.querySelector('#reset-button');
 
       if (textarea) {
-        // Ensure textarea is focusable and not blocked by overlays
-        textarea.style.pointerEvents = 'auto';
+        // Force enable textarea for all modes including preview
+        textarea.style.pointerEvents = 'auto !important';
         textarea.style.position = 'relative';
-        textarea.style.zIndex = '10';
+        textarea.style.zIndex = '1000';
         textarea.disabled = false;
         textarea.readOnly = false;
+        textarea.setAttribute('tabindex', '0');
+        
+        // Override any Rise styles that might disable input
+        textarea.style.userSelect = 'text';
+        textarea.style.cursor = 'text';
+        textarea.style.backgroundColor = '#ffffff';
+        textarea.style.border = '2px solid #ddd';
         
         // Remove any existing listeners to prevent conflicts
         textarea.removeEventListener('input', handleTextareaChange);
@@ -114,6 +121,17 @@
         textarea.addEventListener('keyup', handleTextareaChange);
         textarea.addEventListener('paste', (e) => {
           setTimeout(() => handleTextareaChange(e), 10);
+        });
+        
+        // Force focus capability in preview mode
+        textarea.addEventListener('click', (e) => {
+          e.stopPropagation();
+          textarea.focus();
+        });
+        
+        // Prevent Rise from intercepting focus
+        textarea.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
         });
       }
 
