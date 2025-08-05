@@ -961,7 +961,11 @@ class InteractionManager {
       const isFloatingButton = child.id === 'rise-compare-contrast-fab';
       const isTitle = child.classList.contains('title') || 
                      child.classList.contains('header') ||
-                     child.querySelector('h1, .title, .header');
+                     child.classList.contains('lesson-title') ||
+                     child.classList.contains('page-title') ||
+                     child.classList.contains('block-title') ||
+                     child.querySelector('h1, h2, .title, .header, .lesson-title') ||
+                     child.textContent.trim().length < 100 && child.querySelector('h1, h2, h3');
       const hasVisibleDimensions = child.offsetHeight > 0 || child.offsetWidth > 0;
       const isInteraction = child.hasAttribute('data-interaction-id');
       
@@ -993,6 +997,18 @@ class InteractionManager {
       targetIndex = currentIndex - 1;
       if (targetIndex < 0) {
         this.uiManager.showToast('Cannot move up - already at the top', 'warning');
+        return;
+      }
+      
+      // Don't allow moving above title-like content
+      const targetElement = contentBlocks[targetIndex];
+      if (targetElement && (
+        targetElement.classList.contains('title') || 
+        targetElement.classList.contains('header') ||
+        targetElement.classList.contains('lesson-title') ||
+        targetElement.querySelector('h1, h2, .title, .header, .lesson-title')
+      )) {
+        this.uiManager.showToast('Cannot move above title content', 'warning');
         return;
       }
     } else {
