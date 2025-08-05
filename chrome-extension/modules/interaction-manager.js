@@ -177,16 +177,49 @@ export class InteractionManager {
         return;
       }
 
-      const sibling = direction === 'up' ? element.previousElementSibling : element.nextElementSibling;
-      if (!sibling) {
-        this.uiManager.showToast(`Cannot move ${direction} - no adjacent element`, 'warning');
+      // Find the lesson container
+      const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
+      if (!lessonContainer) {
+        this.uiManager.showToast('Cannot find lesson content area', 'error');
         return;
       }
 
+      // Get all content blocks within the lesson container (including interaction blocks)
+      const contentBlocks = Array.from(lessonContainer.children).filter(child => {
+        // Include interaction blocks and typical Rise content blocks
+        return child.hasAttribute('data-interaction-id') || 
+               child.classList.contains('block') ||
+               child.classList.contains('content-block') ||
+               child.tagName === 'DIV' && child.children.length > 0;
+      });
+
+      const currentIndex = contentBlocks.indexOf(element);
+      if (currentIndex === -1) {
+        this.uiManager.showToast('Interaction not found in content blocks', 'error');
+        return;
+      }
+
+      let targetIndex;
       if (direction === 'up') {
-        DOMUtils.insertBefore(element, sibling);
+        targetIndex = currentIndex - 1;
+        if (targetIndex < 0) {
+          this.uiManager.showToast('Cannot move up - already at the top', 'warning');
+          return;
+        }
       } else {
-        DOMUtils.insertAfter(element, sibling);
+        targetIndex = currentIndex + 1;
+        if (targetIndex >= contentBlocks.length) {
+          this.uiManager.showToast('Cannot move down - already at the bottom', 'warning');
+          return;
+        }
+      }
+
+      const targetElement = contentBlocks[targetIndex];
+      
+      if (direction === 'up') {
+        DOMUtils.insertBefore(element, targetElement);
+      } else {
+        DOMUtils.insertAfter(element, targetElement);
       }
 
       this.uiManager.showToast(`Interaction moved ${direction} successfully`, 'success');
