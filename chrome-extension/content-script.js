@@ -931,6 +931,14 @@ class InteractionManager {
           hasOurElement: contentChildren.includes(element)
         });
 
+        // Don't use body as container - too broad
+        if (current.tagName === 'BODY') {
+          console.log(`⚠️ Skipping BODY element, looking deeper for lesson content`);
+          current = current.firstElementChild;
+          depth++;
+          continue;
+        }
+        
         // Accept container if it has our element and either has multiple content children or looks like a lesson area
         if (contentChildren.includes(element) && (contentChildren.length > 1 || isLessonArea)) {
           console.log('✅ Found suitable lesson container at depth', depth);
