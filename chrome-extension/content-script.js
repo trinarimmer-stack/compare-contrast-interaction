@@ -911,11 +911,17 @@ class InteractionManager {
                  (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
         });
 
-        // Also check if this looks like a lesson content area by class names
+        // Check if this looks like a lesson content area by various indicators
         const isLessonArea = current.className.includes('lesson') || 
                             current.className.includes('content') ||
                             current.className.includes('block-list') ||
-                            current.hasAttribute('data-testid');
+                            current.className.includes('player') ||
+                            current.className.includes('container') ||
+                            current.hasAttribute('data-testid') ||
+                            current.hasAttribute('role') ||
+                            current.tagName === 'MAIN' ||
+                            current.id.includes('content') ||
+                            current.id.includes('lesson');
 
         console.log(`📦 Checking container at depth ${depth}:`, {
           tag: current.tagName,
@@ -925,7 +931,8 @@ class InteractionManager {
           hasOurElement: contentChildren.includes(element)
         });
 
-        if (contentChildren.length > 1 && contentChildren.includes(element) && isLessonArea) {
+        // Accept container if it has our element and either has multiple content children or looks like a lesson area
+        if (contentChildren.includes(element) && (contentChildren.length > 1 || isLessonArea)) {
           console.log('✅ Found suitable lesson container at depth', depth);
           lessonContentContainer = current;
           break;
