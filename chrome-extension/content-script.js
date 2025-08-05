@@ -1236,12 +1236,20 @@ window.openConfigModal = (existingConfig = null) => {
 };
 
 window.insertCompareContrastBlock = async () => {
-  return await interactionManager.insertInteractionBlock({
-    title: 'Compare & Contrast',
-    prompt: 'Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.',
-    idealResponse: 'An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.',
-    placeholder: 'Type your response here...'
-  });
+  console.log('🚀 insertCompareContrastBlock called');
+  try {
+    const success = await interactionManager.insertInteractionBlock({
+      title: 'Compare & Contrast',
+      prompt: 'Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.',
+      idealResponse: 'An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.',
+      placeholder: 'Type your response here...'
+    });
+    console.log('📋 Insert result:', success);
+    return success;
+  } catch (error) {
+    console.error('❌ Error in insertCompareContrastBlock:', error);
+    return false;
+  }
 };
 
 window.editInteraction = (interactionId) => {

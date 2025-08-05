@@ -71,19 +71,26 @@ export class InteractionManager {
   }
 
   async insertInteractionBlock(config, targetElement = null) {
+    console.log('🔧 insertInteractionBlock called with config:', config);
     try {
       const interactionId = await this.saveConfiguration(config);
+      console.log('💾 Configuration saved with ID:', interactionId);
       if (!interactionId) {
+        console.log('❌ Failed to save configuration');
         return false;
       }
 
       const html = this.uiManager.createInteractionHTML(interactionId, config);
+      console.log('🏗️ HTML created:', html ? 'success' : 'failed');
       const blockElement = DOMUtils.createElement(html);
       
       if (!blockElement) {
+        console.log('❌ Failed to create DOM element');
         this.uiManager.showToast('Failed to create interaction element', 'error');
         return false;
       }
+
+      console.log('✅ Block element created:', blockElement);
 
       // Find lesson container directly and append to it
       const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
@@ -93,18 +100,21 @@ export class InteractionManager {
         lessonContainer.appendChild(blockElement);
       } else {
         console.warn('❌ No Rise lesson container found - using fallback');
-        this.uiManager.showToast('Cannot find lesson content area', 'error');
-        return false;
+        // Fallback to document.body
+        console.log('📍 Appending to body as fallback');
+        document.body.appendChild(blockElement);
       }
 
       // Add controls and initialize
+      console.log('🔧 Adding controls and initializing...');
       this.addInteractionControls(blockElement, interactionId);
       this.initializeInteraction(blockElement);
       
+      console.log('🎉 Interaction insertion completed successfully');
       this.uiManager.showToast('Interaction added successfully', 'success');
       return true;
     } catch (error) {
-      console.error('Error inserting interaction block:', error);
+      console.error('❌ Error inserting interaction block:', error);
       this.uiManager.showToast('Error inserting interaction block', 'error');
       return false;
     }
