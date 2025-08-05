@@ -867,62 +867,125 @@ class InteractionManager {
       return;
     }
     
-    const parent = element.parentNode;
-    const allSiblings = Array.from(parent.children);
-    const currentIndex = allSiblings.indexOf(element);
+    console.log('🔄 Starting move operation for:', interactionId, direction);
     
+    // Find the correct container - walk up to find one with visible content blocks
+    let container = element.parentElement;
+    let attempts = 0;
     
-    let targetIndex;
-    if (direction === 'up') {
-      targetIndex = Math.max(0, currentIndex - 1);
-    } else {
-      targetIndex = Math.min(allSiblings.length - 1, currentIndex + 1);
+    while (container && attempts < 10) {
+      const children = Array.from(container.children);
+      
+      // Look for visible content blocks (not scripts, styles, overlays)
+      const visibleChildren = children.filter(child => {
+        return child.tagName !== 'SCRIPT' && 
+               child.tagName !== 'STYLE' && 
+               child.tagName !== 'LINK' &&
+               !child.classList.contains('apt-guide-overlay') &&
+               child.id !== 'rise-compare-contrast-fab' &&
+               (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+      });
+
+      console.log(`📦 Container level ${attempts}:`, {
+        tag: container.tagName,
+        classes: container.className.substring(0, 50),
+        totalChildren: children.length,
+        visibleChildren: visibleChildren.length
+      });
+
+      // If we have multiple visible children and our element is among them, this is our container
+      if (visibleChildren.length > 1 && visibleChildren.includes(element)) {
+        console.log('✅ Found suitable container at level', attempts);
+        break;
+      }
+
+      container = container.parentElement;
+      attempts++;
     }
-    
-    // Only move if the target position is different from current
-    if (targetIndex === currentIndex) {
-      this.uiManager.showToast(`Cannot move ${direction} - already at the ${direction === 'up' ? 'top' : 'bottom'}`, 'warning');
+
+    if (!container || attempts >= 10) {
+      this.uiManager.showToast('Cannot find suitable content container', 'error');
       return;
     }
-    
-    // Get the reference element before removing
-    const referenceElement = direction === 'up' ? 
-      allSiblings[targetIndex] : 
-      (targetIndex + 1 < allSiblings.length ? allSiblings[targetIndex + 1] : null);
-    
-    
-    
-    // Remove element from current position
-    element.remove();
-    
-    // Insert at new position
-    if (referenceElement) {
-      parent.insertBefore(element, referenceElement);
-    } else {
-      parent.appendChild(element);
-    }
-    
-    console.log('AFTER MOVE:');
-    console.log('New index:', Array.from(parent.children).indexOf(element));
-    console.log('New previous sibling:', element.previousElementSibling?.tagName, element.previousElementSibling?.className?.substring(0, 50));
-    console.log('New next sibling:', element.nextElementSibling?.tagName, element.nextElementSibling?.className?.substring(0, 50));
-    
-    // Check if CSS positioning is interfering
-    const computedStyle = window.getComputedStyle(element);
-    console.log('Element positioning:', {
-      position: computedStyle.position,
-      top: computedStyle.top,
-      left: computedStyle.left,
-      transform: computedStyle.transform,
-      zIndex: computedStyle.zIndex
+
+    // Get all content blocks (filter out scripts, styles, etc.)
+    const allChildren = Array.from(container.children);
+    const contentBlocks = allChildren.filter(child => {
+      return child.tagName !== 'SCRIPT' && 
+             child.tagName !== 'STYLE' && 
+             child.tagName !== 'LINK' &&
+             !child.classList.contains('apt-guide-overlay') &&
+             child.id !== 'rise-compare-contrast-fab' &&
+             (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
     });
+
+    console.log('📝 Content blocks found:', contentBlocks.length);
+    console.log('Content blocks:', contentBlocks.map((child, index) => ({
+      index,
+      tag: child.tagName,
+      classes: child.className.substring(0, 30),
+      isInteraction: child.hasAttribute('data-interaction-id'),
+      isCurrentElement: child === element
+    })));
+
+    const currentIndex = contentBlocks.indexOf(element);
+    if (currentIndex === -1) {
+      this.uiManager.showToast('Interaction not found in content blocks', 'error');
+      return;
+    }
+
+    console.log('📊 Current position:', currentIndex + 1, 'of', contentBlocks.length);
+
+    let targetIndex;
+    if (direction === 'up') {
+      targetIndex = currentIndex - 1;
+      if (targetIndex < 0) {
+        this.uiManager.showToast('Cannot move up - already at the top', 'warning');
+        return;
+      }
+    } else {
+      targetIndex = currentIndex + 1;
+      if (targetIndex >= contentBlocks.length) {
+        this.uiManager.showToast('Cannot move down - already at the bottom', 'warning');
+        return;
+      }
+    }
+
+    const targetElement = contentBlocks[targetIndex];
+    console.log('🎯 Moving relative to:', {
+      tag: targetElement.tagName,
+      classes: targetElement.className.substring(0, 30),
+      targetIndex: targetIndex
+    });
+
+    // Perform the move
+    const parent = element.parentNode;
+    parent.removeChild(element);
     
-    // Force a layout recalculation
-    element.style.display = 'none';
-    element.offsetHeight; // Trigger reflow
-    element.style.display = '';
-    
-    this.uiManager.showToast(`Interaction moved ${direction}`, 'success');
+    if (direction === 'up') {
+      parent.insertBefore(element, targetElement);
+    } else {
+      if (targetElement.nextSibling) {
+        parent.insertBefore(element, targetElement.nextSibling);
+      } else {
+        parent.appendChild(element);
+      }
+    }
+
+    // Verify the move
+    const newContentBlocks = Array.from(container.children).filter(child => {
+      return child.tagName !== 'SCRIPT' && 
+             child.tagName !== 'STYLE' && 
+             child.tagName !== 'LINK' &&
+             !child.classList.contains('apt-guide-overlay') &&
+             child.id !== 'rise-compare-contrast-fab' &&
+             (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+    });
+
+    const newIndex = newContentBlocks.indexOf(element);
+    console.log('✅ Move completed. New position:', newIndex + 1, 'of', newContentBlocks.length);
+
+    this.uiManager.showToast(`Interaction moved ${direction} successfully`, 'success');
   }
 
   findInsertionPoint() {
