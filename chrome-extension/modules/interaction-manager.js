@@ -177,58 +177,79 @@ export class InteractionManager {
         return;
       }
 
-      console.log('🔄 Moving interaction:', interactionId, direction);
-      console.log('📍 Current element:', element);
+      console.log('🔄 Starting move operation for:', interactionId, direction);
 
-      // First, let's examine the actual DOM structure
-      const container = element.closest('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content, .apt-lesson-editor');
-      console.log('📦 Found container:', container);
-
-      if (!container) {
-        // Try finding the parent that contains multiple blocks
-        let parent = element.parentElement;
-        while (parent && parent !== document.body) {
-          const siblings = Array.from(parent.children);
-          if (siblings.length > 1) {
-            console.log('📦 Using parent with multiple children:', parent);
-            break;
-          }
-          parent = parent.parentElement;
-        }
+      // Let's examine the actual DOM structure to understand Rise's layout
+      let container = element.parentElement;
+      let attempts = 0;
+      
+      // Walk up to find a container that has meaningful content structure
+      while (container && attempts < 10) {
+        const children = Array.from(container.children);
         
-        if (!parent || parent === document.body) {
-          this.uiManager.showToast('Cannot find lesson content container', 'error');
-          return;
+        // Look for a container that has visible content blocks (not just scripts/styles)
+        const visibleChildren = children.filter(child => {
+          return child.tagName !== 'SCRIPT' && 
+                 child.tagName !== 'STYLE' && 
+                 child.tagName !== 'LINK' &&
+                 !child.classList.contains('apt-guide-overlay') &&
+                 (child.offsetHeight > 0 || child.offsetWidth > 0 || child.hasAttribute('data-interaction-id'));
+        });
+
+        console.log(`📦 Container level ${attempts}:`, {
+          tag: container.tagName,
+          classes: container.className,
+          totalChildren: children.length,
+          visibleChildren: visibleChildren.length,
+          visibleChildrenInfo: visibleChildren.map(child => ({
+            tag: child.tagName,
+            classes: child.className.substring(0, 50),
+            hasInteractionId: child.hasAttribute('data-interaction-id'),
+            isCurrentElement: child === element,
+            height: child.offsetHeight,
+            width: child.offsetWidth
+          }))
+        });
+
+        // If we have multiple visible children and our element is among them, this is our container
+        if (visibleChildren.length > 1 && visibleChildren.includes(element)) {
+          console.log('✅ Found suitable container at level', attempts);
+          break;
         }
-        container = parent;
+
+        container = container.parentElement;
+        attempts++;
       }
 
-      // Get ALL children and find meaningful content blocks
-      const allChildren = Array.from(container.children);
-      console.log('👥 All children:', allChildren.map(child => ({
-        tag: child.tagName,
-        classes: child.className,
-        id: child.id,
-        hasInteractionId: child.hasAttribute('data-interaction-id'),
-        textContent: child.textContent?.substring(0, 50)
-      })));
+      if (!container || attempts >= 10) {
+        this.uiManager.showToast('Cannot find suitable content container', 'error');
+        return;
+      }
 
-      // Filter for actual content blocks (not scripts, styles, etc.)
+      // Get all visible content blocks in the correct container
+      const allChildren = Array.from(container.children);
       const contentBlocks = allChildren.filter(child => {
+        // More specific filtering for Rise content
         const isScript = child.tagName === 'SCRIPT';
         const isStyle = child.tagName === 'STYLE';
-        const isHidden = child.style.display === 'none';
+        const isLink = child.tagName === 'LINK';
+        const isOverlay = child.classList.contains('apt-guide-overlay');
+        const isFloatingButton = child.id === 'rise-compare-contrast-fab';
+        const hasVisibleDimensions = child.offsetHeight > 0 || child.offsetWidth > 0;
         const isInteraction = child.hasAttribute('data-interaction-id');
-        const hasVisibleContent = child.offsetHeight > 0 || child.offsetWidth > 0;
         
-        return !isScript && !isStyle && !isHidden && (isInteraction || hasVisibleContent);
+        // Include if it's our interaction or if it has visible dimensions and isn't a script/style
+        return (isInteraction || hasVisibleDimensions) && !isScript && !isStyle && !isLink && !isOverlay && !isFloatingButton;
       });
 
-      console.log('📝 Content blocks:', contentBlocks.map(child => ({
+      console.log('📝 Final content blocks:', contentBlocks.map((child, index) => ({
+        index,
         tag: child.tagName,
-        classes: child.className,
+        classes: child.className.substring(0, 50),
         hasInteractionId: child.hasAttribute('data-interaction-id'),
-        isCurrentElement: child === element
+        isCurrentElement: child === element,
+        height: child.offsetHeight,
+        width: child.offsetWidth
       })));
 
       const currentIndex = contentBlocks.indexOf(element);
@@ -237,7 +258,7 @@ export class InteractionManager {
         return;
       }
 
-      console.log('📊 Current index:', currentIndex, 'of', contentBlocks.length);
+      console.log('📊 Current position:', currentIndex + 1, 'of', contentBlocks.length);
 
       let targetIndex;
       if (direction === 'up') {
@@ -255,20 +276,42 @@ export class InteractionManager {
       }
 
       const targetElement = contentBlocks[targetIndex];
-      console.log('🎯 Target element:', targetElement);
-      console.log('🔄 Moving', direction === 'up' ? 'before' : 'after', 'target element');
+      console.log('🎯 Moving relative to:', {
+        tag: targetElement.tagName,
+        classes: targetElement.className.substring(0, 50),
+        targetIndex: targetIndex
+      });
 
-      // Remove element first, then insert in new position
+      // Perform the actual move
       const parent = element.parentNode;
       parent.removeChild(element);
       
       if (direction === 'up') {
         parent.insertBefore(element, targetElement);
       } else {
-        parent.insertBefore(element, targetElement.nextSibling);
+        if (targetElement.nextSibling) {
+          parent.insertBefore(element, targetElement.nextSibling);
+        } else {
+          parent.appendChild(element);
+        }
       }
 
-      console.log('✅ Move operation completed');
+      // Verify the move worked
+      const newContentBlocks = Array.from(container.children).filter(child => {
+        const isScript = child.tagName === 'SCRIPT';
+        const isStyle = child.tagName === 'STYLE';
+        const isLink = child.tagName === 'LINK';
+        const isOverlay = child.classList.contains('apt-guide-overlay');
+        const isFloatingButton = child.id === 'rise-compare-contrast-fab';
+        const hasVisibleDimensions = child.offsetHeight > 0 || child.offsetWidth > 0;
+        const isInteraction = child.hasAttribute('data-interaction-id');
+        
+        return (isInteraction || hasVisibleDimensions) && !isScript && !isStyle && !isLink && !isOverlay && !isFloatingButton;
+      });
+
+      const newIndex = newContentBlocks.indexOf(element);
+      console.log('✅ Move completed. New position:', newIndex + 1, 'of', newContentBlocks.length);
+
       this.uiManager.showToast(`Interaction moved ${direction} successfully`, 'success');
     } catch (error) {
       console.error('❌ Error moving interaction:', error);
