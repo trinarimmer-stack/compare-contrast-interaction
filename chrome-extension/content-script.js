@@ -1524,21 +1524,37 @@ function findBlockLibraryInsertionPoint(blockLibrary) {
   return blockLibrary;
 }
 
+// Global variable to store the insertion point
+let currentInsertionPoint = null;
+
 function setupAddBlockButtonIntegration() {
-  // Watch for "Add Block" buttons that might open the block library
-  const addBlockObserver = new MutationObserver((mutations) => {
+  // Watch for "Add Block" buttons and track where they were clicked
+  const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          // Look for add block buttons
+          // Look for add block buttons and attach click listeners
           const addButtons = node.querySelectorAll ? 
-            node.querySelectorAll('[class*="add"], [class*="plus"], [aria-label*="Add"]') : 
+            node.querySelectorAll('[class*="add"], [class*="plus"], [aria-label*="Add"], button[title*="Add"], button[title*="Block"]') : 
             [];
           
           addButtons.forEach(button => {
-            if (button.textContent.toLowerCase().includes('block') || 
-                button.getAttribute('aria-label')?.toLowerCase().includes('block')) {
-              console.log('🔘 Found add block button, will watch for library');
+            const buttonText = button.textContent?.toLowerCase() || '';
+            const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+            const title = button.getAttribute('title')?.toLowerCase() || '';
+            
+            if (buttonText.includes('block') || buttonText.includes('add') || 
+                ariaLabel.includes('block') || ariaLabel.includes('add') ||
+                title.includes('block') || title.includes('add') ||
+                button.classList.toString().includes('add') ||
+                button.classList.toString().includes('plus')) {
+              
+              // Remove existing listener to prevent duplicates
+              button.removeEventListener('click', captureInsertionPoint);
+              
+              // Add click listener to capture insertion point
+              button.addEventListener('click', captureInsertionPoint);
+              console.log('🔘 Added click listener to add block button');
             }
           });
         }
@@ -1546,13 +1562,79 @@ function setupAddBlockButtonIntegration() {
     });
   });
 
-  addBlockObserver.observe(document.body, {
+  // Also check existing buttons
+  const existingButtons = document.querySelectorAll('[class*="add"], [class*="plus"], [aria-label*="Add"], button[title*="Add"], button[title*="Block"]');
+  existingButtons.forEach(button => {
+    const buttonText = button.textContent?.toLowerCase() || '';
+    const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+    const title = button.getAttribute('title')?.toLowerCase() || '';
+    
+    if (buttonText.includes('block') || buttonText.includes('add') || 
+        ariaLabel.includes('block') || ariaLabel.includes('add') ||
+        title.includes('block') || title.includes('add') ||
+        button.classList.toString().includes('add') ||
+        button.classList.toString().includes('plus')) {
+      
+      button.removeEventListener('click', captureInsertionPoint);
+      button.addEventListener('click', captureInsertionPoint);
+      console.log('🔘 Added click listener to existing add block button');
+    }
+  });
+
+  observer.observe(document.body, {
     childList: true,
     subtree: true
   });
 }
 
+function captureInsertionPoint(event) {
+  const button = event.target.closest('button');
+  if (!button) return;
+  
+  console.log('📍 Capturing insertion point from button click');
+  
+  // Find the nearest block or content container to this button
+  let insertionPoint = button.closest('[class*="block"]');
+  
+  if (!insertionPoint) {
+    // Look for lesson content containers
+    insertionPoint = button.closest('[class*="lesson"], [class*="content"], [data-testid*="lesson"]');
+  }
+  
+  if (!insertionPoint) {
+    // Look for the parent container that might hold blocks
+    let parent = button.parentElement;
+    while (parent && parent !== document.body) {
+      if (parent.children.length > 1 && parent.querySelector('[class*="block"]')) {
+        insertionPoint = parent;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+  }
+  
+  // Store the insertion point and the clicked button
+  currentInsertionPoint = {
+    element: insertionPoint,
+    button: button,
+    timestamp: Date.now()
+  };
+  
+  console.log('📍 Stored insertion point:', currentInsertionPoint);
+}
+
 function findCurrentInsertionPoint() {
+  // First, check if we have a stored insertion point from the button click
+  if (currentInsertionPoint && (Date.now() - currentInsertionPoint.timestamp < 10000)) {
+    console.log('📍 Using stored insertion point from button click');
+    return currentInsertionPoint.element;
+  }
+  
+  // Clear expired insertion point
+  if (currentInsertionPoint && (Date.now() - currentInsertionPoint.timestamp >= 10000)) {
+    currentInsertionPoint = null;
+  }
+  
   // Look for active insertion indicators in Rise
   const indicators = [
     '.insertion-indicator',
@@ -1591,15 +1673,6 @@ function findCurrentInsertionPoint() {
     }
   }
   
-  // Look for recently interacted elements with Add buttons
-  const recentlyClickedElements = document.querySelectorAll('[data-recently-clicked="true"], .recently-active, .active');
-  for (const element of recentlyClickedElements) {
-    if (element.closest('[class*="lesson"], [class*="content"]')) {
-      console.log('📍 Found recently interacted element');
-      return element;
-    }
-  }
-  
   return null;
 }
 
@@ -1628,9 +1701,58 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
     }
     
     // Insert at the specific position or fall back to lesson content
-    if (insertionPoint) {
-      console.log('📍 Inserting at specific insertion point');
-      insertionPoint.parentNode.insertBefore(interactionElement, insertionPoint.nextSibling);
+    if (insertionPoint && currentInsertionPoint) {
+      console.log('📍 Inserting at button-specific insertion point');
+      
+      // If we have a stored insertion point from a button click, use that context
+      const buttonElement = currentInsertionPoint.button;
+      
+      // Find the closest block container to the button
+      let targetBlock = buttonElement.closest('[class*="block"]');
+      
+      if (targetBlock) {
+        // Insert after this block
+        targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
+        console.log('✅ Inserted after target block');
+      } else {
+        // Look for the lesson content container
+        let lessonContainer = buttonElement.closest('[class*="lesson"], [class*="content"]');
+        if (lessonContainer) {
+          // Find the right insertion point within the lesson
+          const blocks = lessonContainer.querySelectorAll('[class*="block"]');
+          if (blocks.length > 0) {
+            // Insert after the last block that appears before the button
+            let insertAfterBlock = null;
+            for (const block of blocks) {
+              const buttonRect = buttonElement.getBoundingClientRect();
+              const blockRect = block.getBoundingClientRect();
+              if (blockRect.top < buttonRect.top) {
+                insertAfterBlock = block;
+              }
+            }
+            if (insertAfterBlock) {
+              insertAfterBlock.parentNode.insertBefore(interactionElement, insertAfterBlock.nextSibling);
+              console.log('✅ Inserted after block near button');
+            } else {
+              lessonContainer.appendChild(interactionElement);
+              console.log('✅ Appended to lesson container');
+            }
+          } else {
+            lessonContainer.appendChild(interactionElement);
+            console.log('✅ Appended to lesson container (no existing blocks)');
+          }
+        } else {
+          insertionPoint.appendChild(interactionElement);
+          console.log('✅ Appended to insertion point');
+        }
+      }
+      
+      // Clear the insertion point after use
+      currentInsertionPoint = null;
+      
+    } else if (insertionPoint) {
+      console.log('📍 Inserting at general insertion point');
+      insertionPoint.appendChild(interactionElement);
     } else {
       // Fall back to finding the lesson content
       const lessonContent = await findLessonContentInsertionPoint();
