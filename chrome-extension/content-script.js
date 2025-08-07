@@ -636,11 +636,10 @@ class RiseIntegration {
         justify-content: center;
         margin-right: 12px;
       ">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
-          <path d="M12 3v18"/>
-          <path d="M8 7a4 4 0 0 1 8 0c0 1-1 2-2 2H10c-1 0-2-1-2-2z"/>
-          <path d="M8 17a4 4 0 0 1 8 0c0 1-1 2-2 2H10c-1 0-2-1-2-2z"/>
-          <circle cx="12" cy="12" r="1"/>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none">
+          <path d="M7 8h10M7 12h6M7 16h8M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="white" stroke-width="2" fill="none"/>
+          <path d="M6 9h4v6H6zM14 9h4v6h-4z" fill="white" opacity="0.8"/>
+          <rect x="9" y="11" width="6" height="2" fill="white"/>
         </svg>
       </div>
       <div>
@@ -1539,6 +1538,8 @@ function setupAddBlockButtonIntegration() {
             [];
           
           addButtons.forEach(button => {
+            if (!button || button.hasAttribute('data-rise-listener')) return;
+            
             const buttonText = button.textContent?.toLowerCase() || '';
             const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
             const title = button.getAttribute('title')?.toLowerCase() || '';
@@ -1549,8 +1550,8 @@ function setupAddBlockButtonIntegration() {
                 button.classList.toString().includes('add') ||
                 button.classList.toString().includes('plus')) {
               
-              // Remove existing listener to prevent duplicates
-              button.removeEventListener('click', captureInsertionPoint);
+              // Mark button to prevent duplicate listeners
+              button.setAttribute('data-rise-listener', 'true');
               
               // Add click listener to capture insertion point
               button.addEventListener('click', captureInsertionPoint);
@@ -1565,6 +1566,8 @@ function setupAddBlockButtonIntegration() {
   // Also check existing buttons
   const existingButtons = document.querySelectorAll('[class*="add"], [class*="plus"], [aria-label*="Add"], button[title*="Add"], button[title*="Block"]');
   existingButtons.forEach(button => {
+    if (!button || button.hasAttribute('data-rise-listener')) return;
+    
     const buttonText = button.textContent?.toLowerCase() || '';
     const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
     const title = button.getAttribute('title')?.toLowerCase() || '';
@@ -1575,7 +1578,8 @@ function setupAddBlockButtonIntegration() {
         button.classList.toString().includes('add') ||
         button.classList.toString().includes('plus')) {
       
-      button.removeEventListener('click', captureInsertionPoint);
+      // Mark button to prevent duplicate listeners
+      button.setAttribute('data-rise-listener', 'true');
       button.addEventListener('click', captureInsertionPoint);
       console.log('🔘 Added click listener to existing add block button');
     }
@@ -1605,7 +1609,7 @@ function captureInsertionPoint(event) {
     // Look for the parent container that might hold blocks
     let parent = button.parentElement;
     while (parent && parent !== document.body) {
-      if (parent.children.length > 1 && parent.querySelector('[class*="block"]')) {
+      if (parent && parent.children && parent.children.length > 1 && parent.querySelector('[class*="block"]')) {
         insertionPoint = parent;
         break;
       }
@@ -1687,7 +1691,8 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
     };
     
     // Save the interaction
-    const interactionId = await StorageManager.saveInteraction(Date.now().toString(), defaultConfig);
+    const interactionId = Date.now().toString();
+    await StorageManager.saveInteraction(interactionId, defaultConfig);
     
     // Create the HTML
     const interactionHTML = uiManager.createInteractionHTML(interactionId, defaultConfig);
