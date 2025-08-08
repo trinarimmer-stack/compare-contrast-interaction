@@ -1645,7 +1645,7 @@ function findCurrentInsertionPoint() {
     currentInsertionPoint = null;
   }
   
-  // Look for active insertion indicators in Rise
+  // Look for active insertion indicators in Rise, including blocks sidebar
   const indicators = [
     '.insertion-indicator',
     '.add-block-indicator', 
@@ -1656,7 +1656,9 @@ function findCurrentInsertionPoint() {
     '.drop-target',
     '[data-testid*="insertion"]',
     '.lesson-builder__insertion',
-    '.content-insertion-point'
+    '.content-insertion-point',
+    '.blocks-sidebar--open',
+    '.blocks-sidebar__overlay'
   ];
   
   for (const selector of indicators) {
@@ -1718,6 +1720,9 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
     if (insertionPoint && currentInsertionPoint) {
       console.log('📍 Inserting at button-specific insertion point');
       
+      // Check if blocks sidebar is open - if so, close it after insertion
+      const blocksSidebar = document.querySelector('.blocks-sidebar--open');
+      
       // If we have a stored insertion point from a button click, use that context
       const buttonElement = currentInsertionPoint.button;
       
@@ -1764,8 +1769,19 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
               const blockRect = block.getBoundingClientRect();
               if (blockRect.top < buttonRect.top) {
                 insertAfterBlock = block;
-              }
-            }
+        }
+      }
+      
+      // Close the blocks sidebar if it's open
+      if (blocksSidebar) {
+        const closeButton = blocksSidebar.querySelector('[class*="close"], [aria-label*="close"]');
+        if (closeButton) {
+          closeButton.click();
+        }
+      }
+      
+      // Clear the insertion point after successful insertion
+      currentInsertionPoint = null;
             if (insertAfterBlock) {
               insertAfterBlock.parentNode.insertBefore(interactionElement, insertAfterBlock.nextSibling);
               console.log('✅ Inserted after block near button');
