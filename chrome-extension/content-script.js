@@ -1645,7 +1645,40 @@ function findCurrentInsertionPoint() {
     currentInsertionPoint = null;
   }
   
-  // Look for active insertion indicators in Rise, including blocks sidebar
+  // Look for block containers with data-block-id in Rise
+  const blockContainers = document.querySelectorAll('[data-block-id]');
+  
+  if (blockContainers.length > 0) {
+    console.log(`📦 Found ${blockContainers.length} Rise blocks with data-block-id`);
+    
+    // If we have a stored insertion point, try to find the closest block
+    if (currentInsertionPoint && currentInsertionPoint.button) {
+      const buttonRect = currentInsertionPoint.button.getBoundingClientRect();
+      let closestBlock = null;
+      let minDistance = Infinity;
+      
+      blockContainers.forEach(block => {
+        const blockRect = block.getBoundingClientRect();
+        const distance = Math.abs(blockRect.top - buttonRect.top);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestBlock = block;
+        }
+      });
+      
+      if (closestBlock) {
+        console.log(`🎯 Found closest block for insertion: ${closestBlock.getAttribute('data-block-id')}`);
+        return closestBlock;
+      }
+    } else {
+      // Default to the last block
+      const lastBlock = blockContainers[blockContainers.length - 1];
+      console.log(`📍 Using last block for insertion: ${lastBlock.getAttribute('data-block-id')}`);
+      return lastBlock;
+    }
+  }
+  
+  // Fallback: Look for active insertion indicators in Rise
   const indicators = [
     '.insertion-indicator',
     '.add-block-indicator', 
@@ -1656,9 +1689,7 @@ function findCurrentInsertionPoint() {
     '.drop-target',
     '[data-testid*="insertion"]',
     '.lesson-builder__insertion',
-    '.content-insertion-point',
-    '.blocks-sidebar--open',
-    '.blocks-sidebar__overlay'
+    '.content-insertion-point'
   ];
   
   for (const selector of indicators) {
