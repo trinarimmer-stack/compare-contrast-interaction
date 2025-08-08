@@ -1597,21 +1597,25 @@ function captureInsertionPoint(event) {
   
   console.log('📍 Capturing insertion point from button click');
   
-  // Find the nearest block or content container to this button
-  // Based on Rise CSS structure: .fr-box, .fr-view, .block-text, .rise-tiptap
-  let insertionPoint = button.closest('[class*="block"], .fr-box, .fr-view, .rise-tiptap');
+  // Find the exact Rise block structure based on DOM inspection
+  // Look for the block-create container first
+  let insertionPoint = button.closest('.block-create');
   
   if (!insertionPoint) {
-    // Look for lesson content containers with Froala editor context
-    insertionPoint = button.closest('[class*="lesson"], [class*="content"], [data-testid*="lesson"], .block-text');
+    // Look for Rise block containers with data-block-id
+    insertionPoint = button.closest('[data-block-id]');
   }
   
   if (!insertionPoint) {
-    // Look for the parent container that might hold blocks
+    // Look for lesson-blocks container
+    insertionPoint = button.closest('.lesson-blocks__block-type-container, [class*="lesson-blocks"]');
+  }
+  
+  if (!insertionPoint) {
+    // Look for any block container in the Rise structure
     let parent = button.parentElement;
     while (parent && parent !== document.body) {
-      if (parent && parent.children && parent.children.length > 1 && 
-          (parent.querySelector('[class*="block"]') || parent.querySelector('.fr-box') || parent.querySelector('.fr-view'))) {
+      if (parent.querySelector('[data-block-id]') || parent.classList.toString().includes('block')) {
         insertionPoint = parent;
         break;
       }
@@ -1717,16 +1721,32 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
       // If we have a stored insertion point from a button click, use that context
       const buttonElement = currentInsertionPoint.button;
       
-      // Find the closest block container to the button, including Froala containers
-      let targetBlock = buttonElement.closest('[class*="block"], .fr-box, .fr-view, .block-text');
+      // Find the exact Rise block structure based on DOM inspection
+      let targetBlock = buttonElement.closest('.block-create');
+      let insertAfter = null;
       
       if (targetBlock) {
-        // For Froala containers, look for the actual block wrapper
-        if (targetBlock.classList.contains('fr-box') || targetBlock.classList.contains('fr-view')) {
-          targetBlock = targetBlock.closest('[class*="block"]') || targetBlock;
+        // Find the previous block with data-block-id to insert after
+        let prevSibling = targetBlock.previousElementSibling;
+        while (prevSibling) {
+          if (prevSibling.hasAttribute('data-block-id')) {
+            insertAfter = prevSibling;
+            break;
+          }
+          prevSibling = prevSibling.previousElementSibling;
         }
-        // Insert after this block
-        if (targetBlock.parentNode) {
+        
+        // Insert the new block between the last block and the block-create container
+        if (insertAfter) {
+          insertAfter.parentNode.insertBefore(interactionElement, targetBlock);
+        } else {
+          // If no previous block found, insert at the beginning
+          targetBlock.parentNode.insertBefore(interactionElement, targetBlock);
+        }
+      } else {
+        // Fallback: find any block with data-block-id and insert after it
+        targetBlock = buttonElement.closest('[data-block-id]');
+        if (targetBlock && targetBlock.parentNode) {
           targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
         }
         console.log('✅ Inserted after target block');
