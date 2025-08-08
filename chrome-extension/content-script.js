@@ -1598,18 +1598,20 @@ function captureInsertionPoint(event) {
   console.log('📍 Capturing insertion point from button click');
   
   // Find the nearest block or content container to this button
-  let insertionPoint = button.closest('[class*="block"]');
+  // Based on Rise CSS structure: .fr-box, .fr-view, .block-text, .rise-tiptap
+  let insertionPoint = button.closest('[class*="block"], .fr-box, .fr-view, .rise-tiptap');
   
   if (!insertionPoint) {
-    // Look for lesson content containers
-    insertionPoint = button.closest('[class*="lesson"], [class*="content"], [data-testid*="lesson"]');
+    // Look for lesson content containers with Froala editor context
+    insertionPoint = button.closest('[class*="lesson"], [class*="content"], [data-testid*="lesson"], .block-text');
   }
   
   if (!insertionPoint) {
     // Look for the parent container that might hold blocks
     let parent = button.parentElement;
     while (parent && parent !== document.body) {
-      if (parent && parent.children && parent.children.length > 1 && parent.querySelector('[class*="block"]')) {
+      if (parent && parent.children && parent.children.length > 1 && 
+          (parent.querySelector('[class*="block"]') || parent.querySelector('.fr-box') || parent.querySelector('.fr-view'))) {
         insertionPoint = parent;
         break;
       }
@@ -1661,12 +1663,15 @@ function findCurrentInsertionPoint() {
     }
   }
   
-  // Enhanced search for Rise 360 specific patterns
+  // Enhanced search for Rise 360 specific patterns including Froala containers
   const riseInsertionSelectors = [
     '.lesson-builder .block:last-child',
     '[data-testid="lesson-content"] > *:last-child',
     '.lesson-content > div:last-child',
-    '.content-area > div:last-child'
+    '.content-area > div:last-child',
+    '.fr-box:last-child',
+    '.fr-view:last-child',
+    '.block-text:last-child'
   ];
   
   for (const selector of riseInsertionSelectors) {
@@ -1712,12 +1717,18 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
       // If we have a stored insertion point from a button click, use that context
       const buttonElement = currentInsertionPoint.button;
       
-      // Find the closest block container to the button
-      let targetBlock = buttonElement.closest('[class*="block"]');
+      // Find the closest block container to the button, including Froala containers
+      let targetBlock = buttonElement.closest('[class*="block"], .fr-box, .fr-view, .block-text');
       
       if (targetBlock) {
+        // For Froala containers, look for the actual block wrapper
+        if (targetBlock.classList.contains('fr-box') || targetBlock.classList.contains('fr-view')) {
+          targetBlock = targetBlock.closest('[class*="block"]') || targetBlock;
+        }
         // Insert after this block
-        targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
+        if (targetBlock.parentNode) {
+          targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
+        }
         console.log('✅ Inserted after target block');
       } else {
         // Look for the lesson content container
