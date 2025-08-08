@@ -1784,22 +1784,39 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
         targetBlock = buttonElement.closest('[data-block-id]');
         if (targetBlock && targetBlock.parentNode) {
           targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
-        }
-        console.log('✅ Inserted after target block');
-      } else {
-        // Look for the lesson content container
-        let lessonContainer = buttonElement.closest('[class*="lesson"], [class*="content"]');
-        if (lessonContainer) {
-          // Find the right insertion point within the lesson
-          const blocks = lessonContainer.querySelectorAll('[class*="block"]');
-          if (blocks.length > 0) {
-            // Insert after the last block that appears before the button
-            let insertAfterBlock = null;
-            for (const block of blocks) {
-              const buttonRect = buttonElement.getBoundingClientRect();
-              const blockRect = block.getBoundingClientRect();
-              if (blockRect.top < buttonRect.top) {
-                insertAfterBlock = block;
+          console.log('✅ Inserted after target block');
+        } else {
+          // Look for the lesson content container
+          let lessonContainer = buttonElement.closest('[class*="lesson"], [class*="content"]');
+          if (lessonContainer) {
+            // Find the right insertion point within the lesson
+            const blocks = lessonContainer.querySelectorAll('[class*="block"]');
+            if (blocks.length > 0) {
+              // Insert after the last block that appears before the button
+              let insertAfterBlock = null;
+              for (const block of blocks) {
+                const buttonRect = buttonElement.getBoundingClientRect();
+                const blockRect = block.getBoundingClientRect();
+                if (blockRect.top < buttonRect.top) {
+                  insertAfterBlock = block;
+                }
+              }
+              
+              if (insertAfterBlock) {
+                insertAfterBlock.parentNode.insertBefore(interactionElement, insertAfterBlock.nextSibling);
+                console.log('✅ Inserted after block near button');
+              } else {
+                lessonContainer.appendChild(interactionElement);
+                console.log('✅ Appended to lesson container');
+              }
+            } else {
+              lessonContainer.appendChild(interactionElement);
+              console.log('✅ Appended to lesson container (no existing blocks)');
+            }
+          } else {
+            insertionPoint.appendChild(interactionElement);
+            console.log('✅ Appended to insertion point');
+          }
         }
       }
       
@@ -1812,25 +1829,6 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
       }
       
       // Clear the insertion point after successful insertion
-      currentInsertionPoint = null;
-            if (insertAfterBlock) {
-              insertAfterBlock.parentNode.insertBefore(interactionElement, insertAfterBlock.nextSibling);
-              console.log('✅ Inserted after block near button');
-            } else {
-              lessonContainer.appendChild(interactionElement);
-              console.log('✅ Appended to lesson container');
-            }
-          } else {
-            lessonContainer.appendChild(interactionElement);
-            console.log('✅ Appended to lesson container (no existing blocks)');
-          }
-        } else {
-          insertionPoint.appendChild(interactionElement);
-          console.log('✅ Appended to insertion point');
-        }
-      }
-      
-      // Clear the insertion point after use
       currentInsertionPoint = null;
       
     } else if (insertionPoint) {
