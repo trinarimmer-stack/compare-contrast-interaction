@@ -1005,11 +1005,12 @@ class InteractionManager {
 
     let targetIndex;
     if (direction === 'up') {
-      targetIndex = currentIndex - 1;
-      if (targetIndex < 0) {
+      if (currentIndex <= 0) {
         this.uiManager.showToast('Cannot move up - already at the top', 'warning');
         return;
       }
+      
+      targetIndex = currentIndex - 1;
       
       // Don't allow moving above title-like content
       const targetElement = contentBlocks[targetIndex];
@@ -1023,11 +1024,12 @@ class InteractionManager {
         return;
       }
     } else {
-      targetIndex = currentIndex + 1;
-      if (targetIndex >= contentBlocks.length) {
+      if (currentIndex >= contentBlocks.length - 1) {
         this.uiManager.showToast('Cannot move down - already at the bottom', 'warning');
         return;
       }
+      
+      targetIndex = currentIndex + 1;
     }
 
     const targetElement = contentBlocks[targetIndex];
