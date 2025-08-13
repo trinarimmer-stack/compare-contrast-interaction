@@ -1005,7 +1005,7 @@ class InteractionManager {
 
     let targetIndex;
     if (direction === 'up') {
-      if (currentIndex <= 0) {
+      if (currentIndex === 0) {
         this.uiManager.showToast('Cannot move up - already at the top', 'warning');
         return;
       }
