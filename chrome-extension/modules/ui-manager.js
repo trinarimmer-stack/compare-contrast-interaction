@@ -82,46 +82,83 @@ export class UIManager {
     `;
 
     const buttons = [
-      { icon: '✏️', action: 'edit', title: 'Edit', color: '#28a745' },
-      { icon: '↑', action: 'move-up', title: 'Move Up', color: '#007bff' },
-      { icon: '↓', action: 'move-down', title: 'Move Down', color: '#007bff' },
-      { icon: '🗑️', action: 'delete', title: 'Delete', color: '#dc3545' }
+      { 
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="m18.5 2.5 3 3L12 15l-4 1 1-4Z"/>
+        </svg>`, 
+        action: 'edit', 
+        title: 'Edit', 
+        color: '#1a5f3f',
+        hoverColor: '#28a745'
+      },
+      { 
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19V5"/>
+          <path d="m5 12 7-7 7 7"/>
+        </svg>`, 
+        action: 'move-up', 
+        title: 'Move Up', 
+        color: '#1a4f7a',
+        hoverColor: '#007bff'
+      },
+      { 
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14"/>
+          <path d="m19 12-7 7-7-7"/>
+        </svg>`, 
+        action: 'move-down', 
+        title: 'Move Down', 
+        color: '#1a4f7a',
+        hoverColor: '#007bff'
+      },
+      { 
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        </svg>`, 
+        action: 'delete', 
+        title: 'Delete', 
+        color: '#8b1a1a',
+        hoverColor: '#dc3545'
+      }
     ];
 
-    buttons.forEach(({ icon, action, title, color }) => {
+    buttons.forEach(({ icon, action, title, color, hoverColor }) => {
       const button = document.createElement('button');
       button.className = `${action}-btn`;
       button.setAttribute('data-interaction-id', interactionId);
       button.title = title;
-      button.textContent = icon;
+      button.innerHTML = icon;
       
       button.style.cssText = `
         background: ${color};
         color: white;
         border: none;
-        border-radius: 4px;
-        padding: 6px 8px;
-        font-size: 12px;
+        border-radius: 6px;
+        padding: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
-        min-width: 28px;
-        height: 28px;
+        min-width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       `;
 
       // Add hover effects
       button.addEventListener('mouseenter', () => {
-        button.style.transform = 'translateY(-1px)';
-        button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
-        button.style.filter = 'brightness(1.1)';
+        button.style.background = hoverColor;
+        button.style.transform = 'translateY(-2px)';
+        button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
       });
 
       button.addEventListener('mouseleave', () => {
+        button.style.background = color;
         button.style.transform = 'translateY(0)';
-        button.style.boxShadow = 'none';
-        button.style.filter = 'brightness(1)';
+        button.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
       });
 
       controls.appendChild(button);
