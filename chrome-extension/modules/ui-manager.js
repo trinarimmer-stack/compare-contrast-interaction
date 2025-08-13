@@ -89,9 +89,9 @@ export class UIManager {
         </svg>`, 
         action: 'edit', 
         title: 'Edit Interaction', 
-        color: '#0f5132',
-        hoverColor: '#198754',
-        borderColor: '#198754'
+        color: '#4a5568',
+        hoverColor: '#2d3748',
+        borderColor: '#718096'
       },
       { 
         icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -100,9 +100,9 @@ export class UIManager {
         </svg>`, 
         action: 'move-up', 
         title: 'Move Up', 
-        color: '#084298',
-        hoverColor: '#0d6efd',
-        borderColor: '#0d6efd'
+        color: '#4a5568',
+        hoverColor: '#2d3748',
+        borderColor: '#718096'
       },
       { 
         icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -111,9 +111,9 @@ export class UIManager {
         </svg>`, 
         action: 'move-down', 
         title: 'Move Down', 
-        color: '#084298',
-        hoverColor: '#0d6efd',
-        borderColor: '#0d6efd'
+        color: '#4a5568',
+        hoverColor: '#2d3748',
+        borderColor: '#718096'
       },
       { 
         icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -125,9 +125,9 @@ export class UIManager {
         </svg>`, 
         action: 'delete', 
         title: 'Delete Interaction', 
-        color: '#721c24',
-        hoverColor: '#dc3545',
-        borderColor: '#dc3545'
+        color: '#4a5568',
+        hoverColor: '#2d3748',
+        borderColor: '#718096'
       }
     ];
 
