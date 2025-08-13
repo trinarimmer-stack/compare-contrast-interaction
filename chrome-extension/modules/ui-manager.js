@@ -83,49 +83,55 @@ export class UIManager {
 
     const buttons = [
       { 
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="m18.5 2.5 3 3L12 15l-4 1 1-4Z"/>
         </svg>`, 
         action: 'edit', 
-        title: 'Edit', 
-        color: '#1a5f3f',
-        hoverColor: '#28a745'
+        title: 'Edit Interaction', 
+        color: '#0f5132',
+        hoverColor: '#198754',
+        borderColor: '#198754'
       },
       { 
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 19V5"/>
           <path d="m5 12 7-7 7 7"/>
         </svg>`, 
         action: 'move-up', 
         title: 'Move Up', 
-        color: '#1a4f7a',
-        hoverColor: '#007bff'
+        color: '#084298',
+        hoverColor: '#0d6efd',
+        borderColor: '#0d6efd'
       },
       { 
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14"/>
           <path d="m19 12-7 7-7-7"/>
         </svg>`, 
         action: 'move-down', 
         title: 'Move Down', 
-        color: '#1a4f7a',
-        hoverColor: '#007bff'
+        color: '#084298',
+        hoverColor: '#0d6efd',
+        borderColor: '#0d6efd'
       },
       { 
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 6h18"/>
           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          <path d="m9 9 6 6"/>
+          <path d="M15 9l-6 6"/>
         </svg>`, 
         action: 'delete', 
-        title: 'Delete', 
-        color: '#8b1a1a',
-        hoverColor: '#dc3545'
+        title: 'Delete Interaction', 
+        color: '#721c24',
+        hoverColor: '#dc3545',
+        borderColor: '#dc3545'
       }
     ];
 
-    buttons.forEach(({ icon, action, title, color, hoverColor }) => {
+    buttons.forEach(({ icon, action, title, color, hoverColor, borderColor }) => {
       const button = document.createElement('button');
       button.className = `${action}-btn`;
       button.setAttribute('data-interaction-id', interactionId);
@@ -135,30 +141,45 @@ export class UIManager {
       button.style.cssText = `
         background: ${color};
         color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 8px;
+        border: 2px solid ${borderColor};
+        border-radius: 8px;
+        padding: 10px;
         cursor: pointer;
         transition: all 0.2s ease;
-        min-width: 32px;
-        height: 32px;
+        min-width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        font-weight: 600;
+        position: relative;
+        outline: none;
       `;
 
-      // Add hover effects
+      // Add hover and focus effects for accessibility
       button.addEventListener('mouseenter', () => {
         button.style.background = hoverColor;
-        button.style.transform = 'translateY(-2px)';
-        button.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        button.style.transform = 'translateY(-2px) scale(1.05)';
+        button.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.25)';
+        button.style.borderColor = hoverColor;
       });
 
       button.addEventListener('mouseleave', () => {
         button.style.background = color;
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+        button.style.transform = 'translateY(0) scale(1)';
+        button.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
+        button.style.borderColor = borderColor;
+      });
+
+      button.addEventListener('focus', () => {
+        button.style.boxShadow = `0 0 0 3px ${hoverColor}40, 0 2px 6px rgba(0, 0, 0, 0.15)`;
+        button.style.borderColor = hoverColor;
+      });
+
+      button.addEventListener('blur', () => {
+        button.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
+        button.style.borderColor = borderColor;
       });
 
       controls.appendChild(button);
