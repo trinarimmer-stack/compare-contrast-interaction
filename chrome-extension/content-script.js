@@ -943,7 +943,8 @@ class InteractionManager {
         }
         
         // Accept container if it has our element and either has multiple content children or looks like a lesson area
-        if (contentChildren.includes(element) && (contentChildren.length > 1 || isLessonArea)) {
+        // Also accept if container has fewer children but still contains our element (for newly inserted blocks)
+        if (contentChildren.includes(element) && (contentChildren.length >= 1 || isLessonArea)) {
           console.log('✅ Found suitable lesson container at depth', depth);
           lessonContentContainer = current;
           break;
@@ -955,7 +956,7 @@ class InteractionManager {
     }
 
     if (!lessonContentContainer) {
-      this.uiManager.showToast('Cannot find lesson content container', 'error');
+      this.uiManager.showToast('Cannot find content container', 'error');
       return;
     }
 
