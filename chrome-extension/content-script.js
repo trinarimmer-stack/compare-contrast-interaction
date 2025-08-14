@@ -1377,11 +1377,13 @@ async function initializeExtension() {
     if (riseIntegration.isAuthoringMode()) {
       console.log('✅ Authoring mode detected');
       
-      // Restore any saved interactions first
-      await interactionManager.restoreAllInteractions();
-      
       // Primary strategy: Native Block Library Integration
       await initializeBlockLibraryIntegration();
+      
+      // Delay restoration to ensure Rise content is fully loaded
+      setTimeout(async () => {
+        await interactionManager.restoreAllInteractions();
+      }, 2000);
       
     } else {
       console.log('📖 Preview mode detected - hiding authoring controls');
@@ -1757,68 +1759,33 @@ async function insertCompareContrastBlockAtPosition(insertionPoint) {
       // Check if blocks sidebar is open - if so, close it after insertion
       const blocksSidebar = document.querySelector('.blocks-sidebar--open');
       
-      // If we have a stored insertion point from a button click, use that context
+      // Use the stored insertion point from the button click
       const buttonElement = currentInsertionPoint.button;
       
-      // Find the exact Rise block structure based on DOM inspection
-      let targetBlock = buttonElement.closest('.block-create');
-      let insertAfter = null;
+      // Strategy: Insert right below the "+" button that was clicked
+      // Find the block-create container (where the + button is located)
+      let targetContainer = buttonElement.closest('.block-create');
       
-      if (targetBlock) {
-        // Find the previous block with data-block-id to insert after
-        let prevSibling = targetBlock.previousElementSibling;
-        while (prevSibling) {
-          if (prevSibling.hasAttribute('data-block-id')) {
-            insertAfter = prevSibling;
-            break;
-          }
-          prevSibling = prevSibling.previousElementSibling;
-        }
-        
-        // Insert the new block between the last block and the block-create container
-        if (insertAfter) {
-          insertAfter.parentNode.insertBefore(interactionElement, targetBlock);
-        } else {
-          // If no previous block found, insert at the beginning
-          targetBlock.parentNode.insertBefore(interactionElement, targetBlock);
-        }
+      if (targetContainer) {
+        // Insert our block right before the block-create container
+        // This places it immediately below the content that precedes the + button
+        targetContainer.parentNode.insertBefore(interactionElement, targetContainer);
+        console.log('✅ Inserted block right below the clicked + button');
       } else {
-        // Fallback: find any block with data-block-id and insert after it
-        targetBlock = buttonElement.closest('[data-block-id]');
-        if (targetBlock && targetBlock.parentNode) {
+        // Fallback: look for a data-block-id container and insert after it
+        let targetBlock = buttonElement.closest('[data-block-id]');
+        if (targetBlock) {
           targetBlock.parentNode.insertBefore(interactionElement, targetBlock.nextSibling);
-          console.log('✅ Inserted after target block');
+          console.log('✅ Inserted after target block with data-block-id');
         } else {
-          // Look for the lesson content container
-          let lessonContainer = buttonElement.closest('[class*="lesson"], [class*="content"]');
+          // Final fallback: find lesson container and append
+          let lessonContainer = buttonElement.closest('[class*="lesson"], [class*="content"], [data-testid*="lesson"]');
           if (lessonContainer) {
-            // Find the right insertion point within the lesson
-            const blocks = lessonContainer.querySelectorAll('[class*="block"]');
-            if (blocks.length > 0) {
-              // Insert after the last block that appears before the button
-              let insertAfterBlock = null;
-              for (const block of blocks) {
-                const buttonRect = buttonElement.getBoundingClientRect();
-                const blockRect = block.getBoundingClientRect();
-                if (blockRect.top < buttonRect.top) {
-                  insertAfterBlock = block;
-                }
-              }
-              
-              if (insertAfterBlock) {
-                insertAfterBlock.parentNode.insertBefore(interactionElement, insertAfterBlock.nextSibling);
-                console.log('✅ Inserted after block near button');
-              } else {
-                lessonContainer.appendChild(interactionElement);
-                console.log('✅ Appended to lesson container');
-              }
-            } else {
-              lessonContainer.appendChild(interactionElement);
-              console.log('✅ Appended to lesson container (no existing blocks)');
-            }
+            lessonContainer.appendChild(interactionElement);
+            console.log('✅ Appended to lesson container (fallback)');
           } else {
             insertionPoint.appendChild(interactionElement);
-            console.log('✅ Appended to insertion point');
+            console.log('✅ Appended to insertion point (final fallback)');
           }
         }
       }
