@@ -92,17 +92,53 @@ export class InteractionManager {
 
       console.log('✅ Block element created:', blockElement);
 
-      // Find lesson container directly and append to it
-      const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
-      
-      if (lessonContainer) {
-        console.log('✅ Appending interaction to lesson container:', lessonContainer);
-        lessonContainer.appendChild(blockElement);
+      // Use targetElement if provided, or try to find current insertion point
+      if (targetElement) {
+        console.log('📍 Using provided target element for insertion');
+        targetElement.parentNode.insertBefore(blockElement, targetElement.nextSibling);
       } else {
-        console.warn('❌ No Rise lesson container found - using fallback');
-        // Fallback to document.body
-        console.log('📍 Appending to body as fallback');
-        document.body.appendChild(blockElement);
+        // Check for stored insertion point from button click (from content-script.js)
+        if (typeof window.currentInsertionPoint !== 'undefined' && 
+            window.currentInsertionPoint && 
+            (Date.now() - window.currentInsertionPoint.timestamp < 10000)) {
+          
+          const buttonElement = window.currentInsertionPoint.button;
+          let targetContainer = buttonElement.closest('.block-create');
+          
+          if (targetContainer) {
+            targetContainer.parentNode.insertBefore(blockElement, targetContainer);
+            console.log('✅ Inserted block right below the clicked + button');
+          } else {
+            let targetBlock = buttonElement.closest('[data-block-id]');
+            if (targetBlock) {
+              targetBlock.parentNode.insertBefore(blockElement, targetBlock.nextSibling);
+              console.log('✅ Inserted after target block with data-block-id');
+            } else {
+              // Find lesson container and append
+              const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
+              if (lessonContainer) {
+                lessonContainer.appendChild(blockElement);
+                console.log('✅ Appended to lesson container (fallback)');
+              }
+            }
+          }
+          
+          // Clear the insertion point
+          window.currentInsertionPoint = null;
+        } else {
+          // Find lesson container directly and append to it
+          const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
+          
+          if (lessonContainer) {
+            console.log('✅ Appending interaction to lesson container:', lessonContainer);
+            lessonContainer.appendChild(blockElement);
+          } else {
+            console.warn('❌ No Rise lesson container found - using fallback');
+            // Fallback to document.body
+            console.log('📍 Appending to body as fallback');
+            document.body.appendChild(blockElement);
+          }
+        }
       }
 
       // Add controls and initialize

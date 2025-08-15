@@ -222,51 +222,6 @@ class UIManager {
     });
   }
 
-  createInteractionControls(interactionId) {
-    const controls = document.createElement('div');
-    controls.className = this.riseClasses.controls;
-    controls.style.cssText = `
-      position: absolute;
-      top: -40px;
-      right: 0;
-      display: flex;
-      gap: 8px;
-      background: white;
-      border-radius: 8px;
-      padding: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s ease;
-      z-index: 1000;
-    `;
-
-    const createButton = (text, color, action) => {
-      const btn = document.createElement('button');
-      btn.textContent = text;
-      btn.style.cssText = `
-        padding: 4px 8px;
-        border: none;
-        border-radius: 4px;
-        background: ${color};
-        color: white;
-        cursor: pointer;
-        font-size: 12px;
-        transition: opacity 0.2s ease;
-      `;
-      btn.addEventListener('mouseenter', () => btn.style.opacity = '0.8');
-      btn.addEventListener('mouseleave', () => btn.style.opacity = '1');
-      btn.addEventListener('click', action);
-      return btn;
-    };
-
-    controls.appendChild(createButton('✏️', '#4CAF50', () => window.editInteraction(interactionId)));
-    controls.appendChild(createButton('↑', '#2196F3', () => window.moveInteraction && window.moveInteraction(interactionId, 'up')));
-    controls.appendChild(createButton('↓', '#2196F3', () => window.moveInteraction && window.moveInteraction(interactionId, 'down')));
-    controls.appendChild(createButton('🗑️', '#f44336', () => window.deleteInteraction && window.deleteInteraction(interactionId)));
-
-    return controls;
-  }
 
   createConfigModal() {
     const modal = document.createElement('div');
@@ -782,7 +737,12 @@ class InteractionManager {
   async insertInteractionBlock(config, targetElement = null) {
     try {
       const interactionId = await this.saveConfiguration(config);
-      const insertionPoint = targetElement || this.findInsertionPoint();
+      
+      // If targetElement is provided, use it; otherwise find insertion point
+      let insertionPoint = targetElement;
+      if (!insertionPoint) {
+        insertionPoint = this.findInsertionPoint();
+      }
       
       if (!insertionPoint) {
         throw new Error('Could not find suitable insertion point');
@@ -804,8 +764,12 @@ class InteractionManager {
         this.addInteractionControls(interactionElement, interactionId);
       }
       
-      // Insert into DOM
-      insertionPoint.parentNode.insertBefore(interactionElement, insertionPoint.nextSibling);
+      // Insert into DOM - place directly after the targetElement (the clicked element)
+      if (targetElement) {
+        targetElement.parentNode.insertBefore(interactionElement, targetElement.nextSibling);
+      } else {
+        insertionPoint.parentNode.insertBefore(interactionElement, insertionPoint.nextSibling);
+      }
       
       // Initialize interaction functionality
       this.initializeInteraction(interactionElement);
@@ -1006,7 +970,7 @@ class InteractionManager {
 
     let targetIndex;
     if (direction === 'up') {
-      if (currentIndex === 0) {
+      if (currentIndex <= 0) {
         this.uiManager.showToast('Cannot move up - already at the top', 'warning');
         return;
       }
