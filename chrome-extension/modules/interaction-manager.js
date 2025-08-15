@@ -485,8 +485,28 @@ export class InteractionManager {
   initializeInteraction(container) {
     try {
       const interactionDiv = container.querySelector('[data-compare-contrast-interaction]');
-      if (interactionDiv && window.initializeCompareContrastInteraction) {
-        window.initializeCompareContrastInteraction(interactionDiv);
+      if (interactionDiv) {
+        // Add event listeners for the interaction functionality
+        const textarea = interactionDiv.querySelector('.compare-contrast-textarea');
+        const submitBtn = interactionDiv.querySelector('.compare-contrast-submit');
+        const feedback = interactionDiv.querySelector('.compare-contrast-feedback');
+        
+        if (textarea && submitBtn && feedback) {
+          submitBtn.addEventListener('click', () => {
+            const userResponse = textarea.value.trim();
+            if (userResponse) {
+              feedback.style.display = 'block';
+              feedback.innerHTML = `
+                <div class="feedback-content">
+                  <h4>Your Response:</h4>
+                  <p>${userResponse}</p>
+                  <h4>Ideal Response:</h4>
+                  <p>${interactionDiv.getAttribute('data-ideal-response')}</p>
+                </div>
+              `;
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error initializing interaction:', error);
@@ -580,9 +600,10 @@ export class InteractionManager {
         return;
       }
 
-      // Find insertion point
-      const insertionPoint = await this.findInsertionPoint();
-      if (!insertionPoint) {
+      // Find lesson container for insertion
+      const lessonContainer = document.querySelector('[data-testid="lesson-content"], .lesson-content, .lesson-body, .content-area, .main-content');
+      if (!lessonContainer) {
+        console.warn('No lesson container found for restoration');
         return;
       }
 
@@ -590,9 +611,13 @@ export class InteractionManager {
       const html = this.uiManager.createInteractionHTML(interactionId, config);
       const blockElement = DOMUtils.createElement(html);
       
-      if (blockElement && DOMUtils.insertAfter(blockElement, insertionPoint)) {
-        this.addInteractionControls(blockElement, interactionId);
+      if (blockElement) {
+        lessonContainer.appendChild(blockElement);
+        
+        // Initialize the interaction
         this.initializeInteraction(blockElement);
+        
+        console.log('✅ Restored interaction:', interactionId);
       }
     } catch (error) {
       console.error('Error restoring interaction to DOM:', error);
