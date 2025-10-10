@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CompareContrastInteraction } from "./CompareContrastInteraction";
 import { RiseCodeSnippet } from "./RiseCodeSnippet";
-import { Download, Eye, Edit3 } from "lucide-react";
+import { Download, Eye, Edit3, Code } from "lucide-react";
 
 export const InteractionEditor = () => {
   const [activityInstructions, setActivityInstructions] = useState("It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.");
@@ -15,6 +15,118 @@ export const InteractionEditor = () => {
   const [idealResponse, setIdealResponse] = useState("An effective response would typically include clear reasoning, specific examples, and consideration of multiple perspectives. The key elements should demonstrate understanding of the core concepts while showing practical application.");
   const [placeholder, setPlaceholder] = useState("Type your response here...");
   const [showPreview, setShowPreview] = useState(true);
+
+  const exportForCodeBlock = () => {
+    const codeContent = `<style>
+  .compare-container { max-width: 800px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .compare-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .compare-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #111827; }
+  .compare-prompt { color: #6b7280; margin-bottom: 24px; line-height: 1.6; }
+  .compare-textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical; min-height: 120px; font-size: 14px; font-family: inherit; }
+  .compare-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+  .compare-btn { padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; border: none; }
+  .compare-btn-primary { background: #3b82f6; color: white; }
+  .compare-btn-primary:hover:not(:disabled) { background: #2563eb; }
+  .compare-btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  .compare-btn-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+  .compare-btn-outline:hover { background: #f9fafb; }
+  .compare-success { color: #059669; font-weight: 500; margin-bottom: 24px; font-size: 14px; }
+  .compare-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (min-width: 768px) { .compare-grid { grid-template-columns: 1fr 1fr; } }
+  .compare-response-card { border-radius: 6px; padding: 16px; border: 1px solid; }
+  .compare-response-card.user { background: #eff6ff; border-color: #bfdbfe; }
+  .compare-response-card.ideal { background: #f0fdf4; border-color: #bbf7d0; }
+  .compare-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+  .compare-badge.user { background: #dbeafe; color: #1e40af; }
+  .compare-badge.ideal { background: #dcfce7; color: #166534; }
+  .compare-text { font-size: 14px; line-height: 1.6; color: #374151; white-space: pre-wrap; }
+  .compare-actions { text-align: right; }
+  .compare-center { text-align: center; }
+</style>
+
+<div class="compare-container">
+  <div class="compare-card" id="compareCard">
+    <h2 class="compare-title">Compare & Contrast</h2>
+    <p class="compare-prompt">${prompt}</p>
+    
+    <div id="inputView">
+      <textarea 
+        class="compare-textarea" 
+        id="userInput"
+        placeholder="${placeholder}"
+      ></textarea>
+      <div class="compare-actions" style="margin-top: 16px;">
+        <button class="compare-btn compare-btn-primary" id="compareBtn" disabled>
+          Compare Responses
+        </button>
+      </div>
+    </div>
+    
+    <div id="comparisonView" style="display: none;">
+      <div class="compare-success">✓ Responses compared</div>
+      
+      <div class="compare-grid">
+        <div class="compare-response-card user">
+          <div class="compare-badge user">Your Response</div>
+          <p class="compare-text" id="userResponseText"></p>
+        </div>
+        
+        <div class="compare-response-card ideal">
+          <div class="compare-badge ideal">Ideal Response</div>
+          <p class="compare-text">${idealResponse}</p>
+        </div>
+      </div>
+      
+      <div class="compare-center">
+        <button class="compare-btn compare-btn-outline" id="resetBtn">
+          ↻ Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const userInput = document.getElementById('userInput');
+  const compareBtn = document.getElementById('compareBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const inputView = document.getElementById('inputView');
+  const comparisonView = document.getElementById('comparisonView');
+  const userResponseText = document.getElementById('userResponseText');
+  
+  userInput.addEventListener('input', function() {
+    compareBtn.disabled = !this.value.trim();
+  });
+  
+  compareBtn.addEventListener('click', function() {
+    const response = userInput.value.trim();
+    if (response) {
+      userResponseText.textContent = response;
+      inputView.style.display = 'none';
+      comparisonView.style.display = 'block';
+    }
+  });
+  
+  resetBtn.addEventListener('click', function() {
+    userInput.value = '';
+    compareBtn.disabled = true;
+    inputView.style.display = 'block';
+    comparisonView.style.display = 'none';
+  });
+})();
+</script>`;
+
+    const blob = new Blob([codeContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'compare-contrast-code-block.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const exportAsHTML = () => {
     const htmlContent = `<!DOCTYPE html>
@@ -202,11 +314,19 @@ export const InteractionEditor = () => {
               {showPreview ? 'Hide' : 'Show'} Preview
             </Button>
             <Button
+              onClick={exportForCodeBlock}
+              className="flex items-center gap-2"
+            >
+              <Code className="h-4 w-4" />
+              Export for Code Block
+            </Button>
+            <Button
               onClick={exportAsHTML}
+              variant="outline"
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
-              Download HTML for Rise
+              Export Standalone HTML
             </Button>
           </div>
         </CardContent>
