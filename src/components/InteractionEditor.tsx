@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CompareContrastInteraction } from "./CompareContrastInteraction";
 import { RiseCodeSnippet } from "./RiseCodeSnippet";
-import { Download, Eye, Edit3, Code, Copy } from "lucide-react";
+import { Eye, Edit3, Copy } from "lucide-react";
 
 export const InteractionEditor = () => {
   const [activityInstructions, setActivityInstructions] = useState("It's time to reflect on the last conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to our recommended approach.");
@@ -286,7 +286,7 @@ export const InteractionEditor = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="placeholder">Placeholder Text</Label>
+              <Label htmlFor="placeholder">Placeholder Text for Learner Input Field</Label>
               <Input
                 id="placeholder"
                 value={placeholder}
@@ -334,25 +334,27 @@ export const InteractionEditor = () => {
               <Copy className="h-4 w-4" />
               Copy Code
             </Button>
-            <Button
-              onClick={exportForCodeBlock}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download HTML
-            </Button>
-            <Button
-              onClick={exportAsHTML}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export Standalone HTML
-            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {showPreview && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Live Preview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CompareContrastInteraction
+              prompt={prompt}
+              idealResponse={idealResponse}
+              placeholder={placeholder}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <RiseCodeSnippet
         activityInstructions={activityInstructions}
@@ -360,23 +362,6 @@ export const InteractionEditor = () => {
         idealResponse={idealResponse}
         placeholder={placeholder}
       />
-
-      {showPreview && (
-        <div>
-          <Separator />
-          <div className="pt-8">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Live Preview
-            </h3>
-            <CompareContrastInteraction
-              prompt={prompt}
-              idealResponse={idealResponse}
-              placeholder={placeholder}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

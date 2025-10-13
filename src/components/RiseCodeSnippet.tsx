@@ -162,12 +162,15 @@ if (document.getElementById('${widgetId}-compare-btn')) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Rise Code Snippet Generator</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Copy className="h-5 w-5" />
+          Live Code Preview
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          This generates a self-contained HTML/JavaScript code snippet that you can paste directly into Rise's code snippet block. 
-          No external dependencies required!
+          This is the self-contained HTML/JavaScript code that will be generated based on your content above. 
+          Copy and paste this directly into Rise's code block - no external dependencies required!
         </p>
         
         <div className="flex gap-3">
