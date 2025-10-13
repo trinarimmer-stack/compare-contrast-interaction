@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CompareContrastInteraction } from "./CompareContrastInteraction";
 import { RiseCodeSnippet } from "./RiseCodeSnippet";
-import { Download, Eye, Edit3, Code } from "lucide-react";
+import { Download, Eye, Edit3, Code, Copy } from "lucide-react";
 
 export const InteractionEditor = () => {
   const [activityInstructions, setActivityInstructions] = useState("It's time to reflect on the last SME conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to Julie's recommended approach.");
@@ -16,8 +16,8 @@ export const InteractionEditor = () => {
   const [placeholder, setPlaceholder] = useState("Type your response here...");
   const [showPreview, setShowPreview] = useState(true);
 
-  const exportForCodeBlock = () => {
-    const codeContent = `<style>
+  const getCodeContent = () => {
+    return `<style>
   .compare-container { max-width: 800px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   .compare-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   .compare-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #111827; }
@@ -116,7 +116,21 @@ export const InteractionEditor = () => {
   });
 })();
 </script>`;
+  };
 
+  const copyCodeToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(getCodeContent());
+      // Could add a toast notification here
+      alert('Code copied to clipboard! Now paste it into Rise\'s code block.');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy. Please try the download button instead.');
+    }
+  };
+
+  const exportForCodeBlock = () => {
+    const codeContent = getCodeContent();
     const blob = new Blob([codeContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -314,11 +328,19 @@ export const InteractionEditor = () => {
               {showPreview ? 'Hide' : 'Show'} Preview
             </Button>
             <Button
-              onClick={exportForCodeBlock}
+              onClick={copyCodeToClipboard}
               className="flex items-center gap-2"
             >
-              <Code className="h-4 w-4" />
-              Export for Code Block
+              <Copy className="h-4 w-4" />
+              Copy Code
+            </Button>
+            <Button
+              onClick={exportForCodeBlock}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download HTML
             </Button>
             <Button
               onClick={exportAsHTML}
