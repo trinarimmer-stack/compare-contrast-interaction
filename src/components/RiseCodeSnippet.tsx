@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Download } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface RiseCodeSnippetProps {
@@ -146,19 +146,6 @@ if (document.getElementById('${widgetId}-compare-btn')) {
     });
   };
 
-  const downloadSnippet = () => {
-    const snippet = generateCodeSnippet();
-    const blob = new Blob([snippet], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Compare_Contrast_rise_snippet.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -177,10 +164,6 @@ if (document.getElementById('${widgetId}-compare-btn')) {
           <Button onClick={copyToClipboard} className="flex items-center gap-2">
             <Copy className="h-4 w-4" />
             Copy to Clipboard
-          </Button>
-          <Button onClick={downloadSnippet} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download HTML File
           </Button>
         </div>
 
