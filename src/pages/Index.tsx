@@ -4,7 +4,15 @@ const Index = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Compare & Contrast Interaction Builder</h1>
-          <p className="text-muted-foreground">Create a compare & contrast activity for your Articulate Rise 360 projects. Enter your writing prompt and ideal response in the Content Editor and click the "Copy Code for Rise 360" button to copy the code to your clipboard. In Rise 360, insert a code block from the block library and paste your code. That's it!</p>
+          <div className="text-muted-foreground space-y-3">
+            <p>Want to add a Compare & Contrast activity to Rise 360? It's easy and only three steps:</p>
+            <ol className="list-decimal list-inside space-y-2 ml-4">
+              <li>Enter your writing prompt and ideal response in the Content Editor.</li>
+              <li>Click Copy Code for Rise 360 to copy the generated code.</li>
+              <li>In Rise 360, insert a Code Block from the block library and paste it in.</li>
+            </ol>
+            <p>That's it—your activity is ready to go!</p>
+          </div>
         </div>
         
         <InteractionEditor />
