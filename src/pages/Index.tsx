@@ -1,5 +1,5 @@
 import { InteractionEditor } from "@/components/InteractionEditor";
-import logo from "@/assets/usable-learning-logo-transparent.png";
+import logo from "@/assets/tr-logomark.png";
 
 const Index = () => {
   return <div className="min-h-screen bg-background p-4">
