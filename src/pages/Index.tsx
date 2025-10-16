@@ -8,7 +8,7 @@ const Index = () => {
             <img src={logo} alt="Usable Learning" className="h-12 w-auto" />
             <h1 className="text-3xl font-bold text-foreground">Compare & Contrast Interaction Builder</h1>
           </div>
-          <p className="text-muted-foreground text-base">Create custom compare & contrast text entry interactions for use with the new Rise 360 code block—no Storyline block needed. </p>
+          <p className="text-muted-foreground text-base">Create custom compare & contrast text entry interactions for use with the new Rise 360 code block—no Storyline block needed. Enter a writing prompt and an ideal response, click "Copy Code for Rise 360", and in Rise 360, insert a code block from the block library and paste the code into the code editor. That's it! Your custom compare & contrast text entry interaction is ready to use.</p>
         </div>
 
         <div className="mb-8">
