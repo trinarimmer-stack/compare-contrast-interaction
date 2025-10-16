@@ -4,10 +4,16 @@ import logo from "@/assets/tr-logomark.png";
 const Index = () => {
   return <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <img src={logo} alt="Usable Learning" className="h-12 w-auto" />
-          <h1 className="text-3xl font-bold text-primary">Compare & Contrast Interaction Builder</h1>
+        <div className="bg-card rounded-lg shadow-sm border p-8 mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <img src={logo} alt="Usable Learning" className="h-12 w-auto" />
+            <h1 className="text-3xl font-bold text-foreground">Compare & Contrast Interaction Builder</h1>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Create compare & contrast activities for use with the code block in Articulate Rise 360. Enable xAPI tracking for use with your LRS.
+          </p>
         </div>
+
         <div className="mb-8">
           <div className="text-left max-w-3xl">
             <div className="text-muted-foreground space-y-3">
