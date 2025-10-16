@@ -1,6 +1,5 @@
 import { InteractionEditor } from "@/components/InteractionEditor";
 import logo from "@/assets/tr-logomark.png";
-
 const Index = () => {
   return <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto">
@@ -9,9 +8,7 @@ const Index = () => {
             <img src={logo} alt="Usable Learning" className="h-12 w-auto" />
             <h1 className="text-3xl font-bold text-foreground">Compare & Contrast Interaction Builder</h1>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Create compare & contrast activities for use with the code block in Articulate Rise 360. Enable xAPI tracking for use with your LRS.
-          </p>
+          <p className="text-muted-foreground text-base">Create compare & contrast text entry activities—no Storyline block needed—using the new Rise 360 code block. You can even enable xAPI tracking with your LRS.</p>
         </div>
 
         <div className="mb-8">
