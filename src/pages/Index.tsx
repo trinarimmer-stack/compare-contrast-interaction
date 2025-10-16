@@ -11,20 +11,6 @@ const Index = () => {
           <p className="text-muted-foreground text-base">Create custom compare & contrast text entry interactions for use with the new Rise 360 code block—no Storyline block needed. Enter a writing prompt and an ideal response, click "Copy Code for Rise 360", and in Rise 360, insert a code block from the block library and paste the code into the code editor. That's it! Your custom compare & contrast text entry interaction is ready to use.</p>
         </div>
 
-        <div className="mb-8">
-          <div className="text-left max-w-3xl">
-            <div className="text-muted-foreground space-y-3">
-              <p className="font-semibold">Want to add a Compare & Contrast activity to Rise 360? It's easy and only three steps:</p>
-              <ol className="list-decimal list-inside space-y-2 ml-4">
-                <li>Enter your writing prompt and ideal response in the Content Editor.</li>
-                <li>Click Copy Code for Rise 360 to copy the generated code.</li>
-                <li>In Rise 360, insert a Code Block from the block library and paste it in.</li>
-              </ol>
-              <p>That's it—your activity is ready to go!</p>
-            </div>
-          </div>
-        </div>
-        
         <InteractionEditor />
       </div>
     </div>;
