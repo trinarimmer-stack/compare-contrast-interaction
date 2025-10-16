@@ -8,7 +8,7 @@ const Index = () => {
             <img src={logo} alt="Usable Learning" className="h-12 w-auto" />
             <h1 className="text-3xl font-bold text-foreground">Compare & Contrast Interaction Builder</h1>
           </div>
-          <p className="text-muted-foreground text-base">Create compare & contrast text entry activities—no Storyline block needed—using the new Rise 360 code block. You can even enable xAPI tracking with your LRS.</p>
+          <p className="text-muted-foreground text-base">Create custom compare & contrast text entry interactions for use with the new Rise 360 code block—no Storyline block needed. </p>
         </div>
 
         <div className="mb-8">
