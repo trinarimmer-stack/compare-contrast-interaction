@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 export const InteractionEditor = () => {
   const { toast } = useToast();
   const [activityInstructions, setActivityInstructions] = useState("It's time to reflect on the last conversation. Review the prompt below, enter your response, and then click the \"Compare Responses\" button to see how your response measures up to our recommended approach.");
-  const [prompt, setPrompt] = useState("Think about a specific situation and describe your approach. Provide details about your reasoning and any examples that support your response.");
+  const [prompt, setPrompt] = useState("Type the writing prompt or question you'd like learners to consider as they write their response.");
   const [idealResponse, setIdealResponse] = useState("An ideal response demonstrates accuracy, an appropriate level of detail, and a practical, thoughtful approach.");
   const [placeholder, setPlaceholder] = useState("Type your response here...");
   const [showPreview, setShowPreview] = useState(true);
